@@ -2,14 +2,14 @@ canvas {
     border: 2px solid black; 
     border-radius: 20px;
     display: block;
-    background-image: url("images/background.png");
+    /* background-image: url("images/background.png"); */
 }
 
 .menu {
     position: absolute;
     left: 0px;
     top: 0px;
-    width: 600px;
+    width: 900px;
     height: 600px;
     display: flex;
     flex-direction: column;
@@ -29,13 +29,13 @@ canvas {
 
 #main {
     position: relative;
-    width: 600px;
+    width: 900px;
     margin: 0 auto;
 }
 
 #audioButton {
     position: absolute;
-    left: 540px;
+    left: 840px;
     top: 20px;
     width: 40px;
     height: 40px;

@@ -1,145 +1,201 @@
 // @ts-check
 
+// get the main div
+let div = document.getElementById("main");
+let canvas = /** @type {HTMLCanvasElement} */ (document.getElementById("canvas"));
+let context = canvas.getContext("2d");
+
 // game settings
-let garbageTimer = 100;
 let isOver = false;
 let score = 0;
 let hScore = 0;
 let hp = 3000;
 
-// set up garbage types
-let householdWaste = ['apple', 'bone', 'cheese', 'fish', 'watermelon'];
-let residualWaste = ['cup'];
-let recyclableWaste = ['can', 'soda'];
-let hazardousWaste = ['battery', 'bulb'];
-
 // initial params of spaceship
-let posX = 300;
+let posX = 450;
 let posY = 450;
-let dirX = 0;
-let dirY = 0;
-let speed = 10;
+let orient = 0;
+let forward = 0;
+let clockwise = 0;
+let speedM = 7;
+let speedR = 3;
+
+let fireTimer = 0;
+let fireRate = 15;
+let projSpeed = 7;
+
+// projectiles
+let projectiles = [];
+
+// create new img element
+let spaceshipImg = new Image(); 
+spaceshipImg.src = 'images/spaceship.png'; // Set source path
+let projectileImg = new Image();
+projectileImg.src = 'images/projectile.png';
+
+// set bounds
+let leftBound = 0.5 * spaceshipImg.width;
+let rightBound = canvas.width - 0.5 * spaceshipImg.width;
+let upperBound = 0.5 * spaceshipImg.height;
+let lowerBound = canvas.height - 0.5 * spaceshipImg.height;
 
 // event listeners for keyboard
 window.onkeydown = function (event) {
+    event.preventDefault();
     var key = event.keyCode; //Key code of key pressed
 
-    // white space
-    if (key === 32) {
-        event.preventDefault();
-        collectorIndex = ((collectorIndex + 1) % collectorTypes.length);
-        collector = collectorTypes[collectorIndex];
+    // a
+    if (key === 65) {
+        if (fireTimer >= fireRate) {
+            fire();
+            fireTimer = 0;
+        }
     }
 
-    // right arrow or d
-    if (key === 39 || key === 68) {
-        event.preventDefault();
-        dirX = 1;
+    // q
+    if (key === 81) {
     }
-    // left arrow or a
-    else if (key === 37 || key === 65) {
-        event.preventDefault();
-        dirX = -1;
+
+    // w
+    if (key === 87) {
     }
-    // top arrow or w
-    else if (key === 38 || key === 87) {
-        event.preventDefault();
-        dirY = -1;
+
+    // e
+    if (key === 69) {
     }
-    // down arrow of s
-    else if (key === 40 || key === 83) {
-        event.preventDefault();
-        dirY = 1;
+
+    // r
+    if (key === 82) {
+    }
+
+    // right arrow
+    if (key === 39) {
+        clockwise = 1;
+    }
+    // left arrow
+    else if (key === 37) {
+        clockwise = -1;
+    }
+    // top arrow 
+    else if (key === 38) {
+        forward = 1;
+    }
+    // down arrow
+    else if (key === 40) {
+        forward = -1;
     }
     // delete or backspace, for debug use
     else if (key === 8) {
-        event.preventDefault();
         hp = 0;
     }
 };
 
 window.onkeyup = function (event) {
     // stop moving as soon as any key is up
-    dirX = 0;
-    dirY = 0;
+    forward = 0;
+    clockwise = 0;
 };
 
-function removeUI() {
-    // remove UI elements
-    let UIs = document.getElementsByClassName('UI');
-    while(UIs[0])
-        UIs[0].parentNode.removeChild(UIs[0]);
-}
-
 // set up collectors
-const collectorTypes = ['household_food_waste', 'residual_waste', 'recyclable_waste', 'hazardous_waste'];
-let collectorIndex = 0;
-let collector = collectorTypes[0];
+// const collectorTypes = ['household_food_waste', 'residual_waste', 'recyclable_waste', 'hazardous_waste'];
+// let collectorIndex = 0;
+// let collector = collectorTypes[0];
 
-let panY = 75; // offset of pan relative to spaceship
+// let panY = 75; // offset of pan relative to spaceship
 
-function drawSpaceship(context, posX, posY, spaceshipImg) {
-    if (isOver) return;
+function drawSpaceship() {
+    // update the orientation
+    orient += clockwise * speedR;
+    // update the position
+    let dirX = Math.sin(orient / 180 * Math.PI);
+    let dirY = -Math.cos(orient / 180 * Math.PI);
+    if (((posX >= leftBound && dirX * forward <= 0) || (posX <= rightBound && dirX * forward >= 0)) && 
+        ((posY >= upperBound && dirY * forward <= 0) || (posY <= lowerBound && dirY * forward >= 0))) {
+        posX += dirX * forward * speedM;
+        posY += dirY * forward * speedM;
+    }
+    // draw
     context.save();
-    let panImg = new Image();
-    panImg.src = "images/dustpan.png";
-    let typeImg = new Image();
-    typeImg.src = 'images/'.concat(collector, '.png');
-    let typeY = panY + 12; // offset of pan relative to spaceship
-    context.drawImage(panImg, posX - panImg.width * 0.5, posY - panY - panImg.height * 0.5);
-    context.drawImage(spaceshipImg, posX - spaceshipImg.width * 0.5, posY - spaceshipImg.height * 0.5);
-    context.drawImage(typeImg, posX - typeImg.width * 0.5, posY - typeY - typeImg.height * 0.5);
-    // drawRefDot(context, posX, posY);
+    context.translate(posX, posY);
+    context.rotate(orient / 180 * Math.PI);
+    context.drawImage(spaceshipImg, -spaceshipImg.width * 0.5, -spaceshipImg.height * 0.5);
     context.restore();
 }
 
-let garbages = [];
-let garbageTypes = [householdWaste, residualWaste, recyclableWaste, hazardousWaste];
+function fire() {  
+    let offsetX = Math.sin(orient / 180 * Math.PI) * spaceshipImg.height * 0.5;
+    let offsetY = -Math.cos(orient / 180 * Math.PI) * spaceshipImg.height * 0.5;
+    let proj = {x: posX + offsetX, y: posY + offsetY, a: orient, img: projectileImg};
+    projectiles.push(proj);
+}
+
+function drawProjectiles() {
+    projectiles.forEach(proj => {
+        context.save();
+        if (proj.x >= 0 && proj.x <= canvas.width && proj.y >= 0 && proj.y <= canvas.height) {
+            // update the position
+            let dirX = Math.sin(proj.a / 180 * Math.PI);
+            let dirY = -Math.cos(proj.a / 180 * Math.PI);
+            proj.x += dirX * projSpeed;
+            proj.y += dirY * projSpeed;
+        } else {
+            let i = projectiles.indexOf(proj);
+            projectiles.splice(i, i + 1);
+        }
+        context.translate(proj.x , proj.y);
+        context.rotate(proj.a / 180 * Math.PI);
+        context.drawImage(proj.img, -proj.img.width * 0.5, -proj.img.height * 0.5);
+        context.restore();
+    });
+}
+
+// let garbages = [];
+// let garbageTypes = [householdWaste, residualWaste, recyclableWaste, hazardousWaste];
 
 // handle skull showing up
-let skull;
-let skullTimer = 0;
-let skullRate = 50;
+// let skull;
+// let skullTimer = 0;
+// let skullRate = 50;
 // handle prompt message
 let scoreMsg;
 let scoreMsgTimer = 0;
 let scoreMsgRate = 50;
 
 function detectCollision() {
-    let panImg = new Image();
-    panImg.src = "images/dustpan.png";
-    for (let i = 0; i < garbages.length; i++) {
-        // let gbgX = garbageList[i].getX() + garbageList[i].
-        let g = garbages[i];
-        // zone of detection
-        let polygon = [[posX - panImg.width * 0.5, posY - panY - panImg.height * 0.5], 
-            [posX + panImg.width * 0.5, posY - panY - panImg.height * 0.5], 
-            [posX + panImg.width * 0.5, posY - panY + panImg.height * 0.5], 
-            [posX - panImg.width * 0.5, posY - panY + panImg.height * 0.5]];
-        if (inside(g.posX, g.posY, polygon)) {
-            if (g.type === collector) {
-                let hit = new Audio("sound/correct.wav");
-                hit.load();
-                hit.play();
-                scoreMsg = "+100";
-                hp = hp + 100; // 100 hp award for collecting the correct garbage
-                score++;
-            } else {
-                let miss = new Audio("sound/hitting.wav");
-                miss.load();
-                miss.play();
-                scoreMsg = "-50";
-                if (hp > 50) {
-                    hp -= 50; // 50 hp penalty for hitting the wrong garbage
-                } else {
-                    hp = 0;
-                }
-                skull = g; // make skull at the same position of that garbage
-            }
-             // remove garbage from the array
-            garbages.splice(i, 1);
-        }
-    }
+    // let panImg = new Image();
+    // panImg.src = "images/dustpan.png";
+    // for (let i = 0; i < garbages.length; i++) {
+    //     // let gbgX = garbageList[i].getX() + garbageList[i].
+    //     let g = garbages[i];
+    //     // zone of detection
+    //     let polygon = [[posX - panImg.width * 0.5, posY - panY - panImg.height * 0.5], 
+    //         [posX + panImg.width * 0.5, posY - panY - panImg.height * 0.5], 
+    //         [posX + panImg.width * 0.5, posY - panY + panImg.height * 0.5], 
+    //         [posX - panImg.width * 0.5, posY - panY + panImg.height * 0.5]];
+    //     if (inside(g.posX, g.posY, polygon)) {
+    //         if (g.type === collector) {
+    //             let hit = new Audio("sound/correct.wav");
+    //             hit.load();
+    //             hit.play();
+    //             scoreMsg = "+100";
+    //             hp = hp + 100; // 100 hp award for collecting the correct garbage
+    //             score++;
+    //         } else {
+    //             let miss = new Audio("sound/hitting.wav");
+    //             miss.load();
+    //             miss.play();
+    //             scoreMsg = "-50";
+    //             if (hp > 50) {
+    //                 hp -= 50; // 50 hp penalty for hitting the wrong garbage
+    //             } else {
+    //                 hp = 0;
+    //             }
+    //             skull = g; // make skull at the same position of that garbage
+    //         }
+    //          // remove garbage from the array
+    //         garbages.splice(i, 1);
+    //     }
+    // }
 }
 
 function inside(x, y, vs) {
@@ -158,40 +214,7 @@ function inside(x, y, vs) {
     return inside;
 }
 
-function genGarbage() {
-    if (isOver) return;
-    // randomly generate a type of garbage
-    let typeIndex = Math.floor(Math.random() * garbageTypes.length);
-    let type = collectorTypes[typeIndex];
-    let nameIndex = Math.floor(Math.random() * garbageTypes[typeIndex].length);
-    let name = (garbageTypes[typeIndex])[nameIndex];
-    // range from 75, 525
-    let randomX = Math.floor(Math.random() * 450 + 75);
-    // range from 0.5 to 2
-    let randomVelocity = Math.random() * 1.5 + 0.5;
-    // get the width and height of source image
-    let gImg = new Image();
-    gImg.src = "images/" + name + ".png";
-    // create a new garbage
-    let g = {posX: randomX, posY: 0, type: type, name: name, v: randomVelocity};
-    //let gbg = new garbage(randomX, 0, type, name, randomVelocity); // hard code
-    garbages.push(g);
-}
-
-function drawGarbage(context) {
-    context.save();
-    for (let i = 0; i < garbages.length; i++) {
-        let g = garbages[i];
-        let name = g.name;
-        let gImg = new Image();
-        gImg.src = "images/" + name + ".png";
-        context.drawImage(gImg, g.posX - gImg.width * 0.5, g.posY - gImg.height * 0.5);
-        // drawRefDot(context, g.posX, g.posY);
-    }
-    context.restore();
-}
-
-function drawRefDot(context, posX, posY) {
+function drawRefDot(posX, posY) {
     context.save();
     context.beginPath();
     context.arc(posX, posY, 10, 0, Math.PI * 2);
@@ -199,9 +222,12 @@ function drawRefDot(context, posX, posY) {
     context.restore();
 }
 
-// get the main div
-let div = document.getElementById("main");
-let canvas = /** @type {HTMLCanvasElement} */ (document.getElementById("canvas"));
+function removeUI() {
+    // remove UI elements
+    let UIs = document.getElementsByClassName('UI');
+    while(UIs[0])
+        UIs[0].parentNode.removeChild(UIs[0]);
+}
 
 let buttonW = 250;
 let buttonH = 100;
@@ -234,11 +260,12 @@ function loadGameScene() {
     score = 0;
 
     // reset the position of spaceship
-    posX = 300;
+    posX = 450;
     posY = 450;
+    orient = 0;
+    fireTimer = 0;
 
-    // set up the canvas
-    let context = canvas.getContext("2d");
+    projectiles = [];
 
     let energyBar = document.createElement("progress");
     energyBar.id = "energyBar";
@@ -253,10 +280,6 @@ function loadGameScene() {
     energyIcon.src = "images/energy.png";
     div.appendChild(energyIcon);
 
-    // create new img element
-    let spaceshipImg = new Image(); 
-    spaceshipImg.src = 'images/spaceship.png'; // Set source path
-
     let garbageRate = 100;
     let clock = 0;
     let offset = Date.now();
@@ -267,53 +290,26 @@ function loadGameScene() {
         context.save();
 
         ////////// spaceship section //////////
-        drawSpaceship(context, posX, posY, spaceshipImg);
-        // set bounds
-        let leftBound = 20;
-        let rightBound = canvas.width - 20;
-        let upperBound = 200;
-        let lowerBound = canvas.height - 50;
-        // update the position
-        if ((posX >= leftBound && dirX < 0) || (posX <= rightBound && dirX > 0)) {
-            posX += dirX * speed;
-        }
-        if ((posY >= upperBound && dirY < 0) || (posY <= lowerBound && dirY > 0)) {
-            posY += dirY * speed;
-        }
+        drawSpaceship();
+        fireTimer++;
+
+        drawProjectiles();
         // console.log("x: " + posX + " y: " + posY);
         // check for collision between spaceship and garbage constantly
         detectCollision();
         // draw the skull if hit
-        if (skull) {
-            if (skullTimer < skullRate) {
-                let skullImg = new Image();
-                skullImg.src = "images/skull.png";
-                context.drawImage(skullImg, skull.posX - 0.5 * skullImg.width,
-                    skull.posY - 0.5 * skullImg.height);
-                skullTimer++;
-            } else {
-                skull = null;
-                skullTimer = 0;
-            }
-        }
-
-
-        ////////// garbage section //////////
-        garbageTimer++;
-        if (garbageTimer >= garbageRate) {
-            genGarbage();
-            garbageTimer = 0;
-        }
-        // update the position of garbages
-        for (let i = 0; i < garbages.length; i++) {
-            let g = garbages[i];
-            if (g.posY > canvas.height) {
-                garbages.splice(i, 1);
-            } else {
-                g.posY += g.v;
-            }
-        }
-        drawGarbage(context);
+        // if (skull) {
+        //     if (skullTimer < skullRate) {
+        //         let skullImg = new Image();
+        //         skullImg.src = "images/skull.png";
+        //         context.drawImage(skullImg, skull.posX - 0.5 * skullImg.width,
+        //             skull.posY - 0.5 * skullImg.height);
+        //         skullTimer++;
+        //     } else {
+        //         skull = null;
+        //         skullTimer = 0;
+        //     }
+        // }
 
         ////////// UI section //////////
         // update highest score
@@ -321,10 +317,10 @@ function loadGameScene() {
         // draw texts
         context.save();
         context.fillStyle = "white";
-        let collectorWords = collector.split("_");
-        let collectorInfo = collectorWords.join(" ");
+        // let collectorWords = collector.split("_");
+        // let collectorInfo = collectorWords.join(" ");
         context.font = "16px Georgia";
-        context.fillText("Collector type now: " + collectorInfo, 290, 580);
+        // context.fillText("Collector type now: " + collectorInfo, 290, 580);
         context.fillText("Score: " + score, 80, 25);
         context.fillText("Highest score: " + hScore, 180, 25);
         context.fillText("Energy remaining: " + hp, 110, 70);
@@ -344,7 +340,7 @@ function loadGameScene() {
         if ((Number(second) < 10)) second = '0' + second;
         let minute = Math.floor(clock / 60).toString();
         if ((Number(minute) < 10)) minute = '0' + minute;
-        console.log(second);
+        // console.log(second);
         context.fillText("Time: " + minute + " : " + second, 420, 43);
         offset = Date.now();
         context.restore();
@@ -352,7 +348,7 @@ function loadGameScene() {
         if (hp > 0) {
             hp--;
         } else {
-            loadGameoverScene();
+            loadGameOverScene();
         }
         energyBar.value = hp;
 
@@ -362,28 +358,27 @@ function loadGameScene() {
     draw();
 }
 
-function loadGameoverScene() {
+function loadGameOverScene() {
     removeUI();
 
     isOver = true;
-    skullTimer = skullRate;
-    garbages = [];
+    // skullTimer = skullRate;
+    // garbages = [];
 
-    let context = canvas.getContext("2d");
     context.clearRect(0, 0, canvas.width, canvas.height);
 
-    let gameoverMenu = document.createElement("div");
-    gameoverMenu.className = "menu UI";
+    let gameOverMenu = document.createElement("div");
+    gameOverMenu.className = "menu UI";
 
-    let gameoverText = document.createElement("p");
-    gameoverText.id = "gameOverText";
-    gameoverText.innerHTML = "GAME OVER";
-    gameoverMenu.appendChild(gameoverText);
+    let gameOverText = document.createElement("p");
+    gameOverText.id = "gameOverText";
+    gameOverText.innerHTML = "GAME OVER";
+    gameOverMenu.appendChild(gameOverText);
 
     let scoreText = document.createElement("p");
     scoreText.id = "scoreText";
     scoreText.innerHTML = "Score: " + score;
-    gameoverMenu.appendChild(scoreText);
+    gameOverMenu.appendChild(scoreText);
 
     let tryAgainButton = document.createElement("button");
     tryAgainButton.id = "tryAgainButton";
@@ -391,7 +386,7 @@ function loadGameoverScene() {
     tryAgainButton.innerHTML = "TRY AGAIN";
     tryAgainButton.style.marginBottom = "50px";
     tryAgainButton.onclick = loadGameScene;
-    gameoverMenu.appendChild(tryAgainButton);
+    gameOverMenu.appendChild(tryAgainButton);
 
     let quitButton = document.createElement("button");
     quitButton.id = "quitButton";
@@ -399,9 +394,9 @@ function loadGameoverScene() {
     quitButton.innerHTML = "QUIT";
     quitButton.style.marginBottom = "50px";
     quitButton.onclick = loadMenuScene;
-    gameoverMenu.appendChild(quitButton);
+    gameOverMenu.appendChild(quitButton);
 
-    div.appendChild(gameoverMenu);
+    div.appendChild(gameOverMenu);
 }
 
 window.onload = function() {
