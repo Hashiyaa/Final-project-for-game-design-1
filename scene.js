@@ -10,8 +10,10 @@ let tankPImg = new Image();
 tankPImg.src = 'images/tank_player.png'; // Set source path
 let tankEImg = new Image();
 tankEImg.src = 'images/tank_enemy.png';
-let projectileImg = new Image();
-projectileImg.src = 'images/projectile.png';
+let projectileImgP = new Image();
+projectileImgP.src = 'images/projectile_player.png';
+let projectileImgE = new Image();
+projectileImgE.src = 'images/projectile_enemy.png';
 
 // game settings
 let isOver = false;
@@ -50,7 +52,9 @@ let tankP = {
     attack: 10,
     fireTimer: 0,
     fireRate: 15,
-    img: tankPImg
+    projectiles: [],
+    img: tankPImg,
+    projImg: projectileImgP
 };
 
 // enemy parameters
@@ -59,8 +63,6 @@ let enemySpawnPosX = 100;
 let enemySpawnPosY = 100;
 let enemyNum = 1;
 
-// projectiles
-let projectiles = [];
 
 // event listeners for keyboard
 window.onkeydown = function (event) {
@@ -155,12 +157,13 @@ function drawTank(tank) {
     context.stroke();
     context.restore();
 
+    drawProjectiles(tank);
     // drawRefDot(tank.posX, tank.posY);
 }
 
-function drawProjectiles() {
-    for (let i = 0; i < projectiles.length; i++) {
-        let proj = projectiles[i];
+function drawProjectiles(tank) {
+    for (let i = 0; i < tank.projectiles.length; i++) {
+        let proj = tank.projectiles[i];
         context.save();
         if (proj.x >= 0 && proj.x <= canvas.width && proj.y >= 0 && proj.y <= canvas.height) {
             // update the position
@@ -172,9 +175,9 @@ function drawProjectiles() {
             context.rotate(proj.a / 180 * Math.PI);
             context.drawImage(proj.img, -proj.img.width * 0.5, -proj.img.height * 0.5);
         } else {
-            projectiles.splice(i, 1);
+            tank.projectiles.splice(i, 1);
             i--;
-            // console.log(projectiles);
+            // console.log(tank.projectiles);
         }
         context.restore();
     }
@@ -195,10 +198,9 @@ function fire(tank) {
         x: tank.posX + offsetX,
         y: tank.posY + offsetY + tankOffset,
         a: tank.orient,
-        damage: tank.attack,
-        img: projectileImg
+        img: projectileImgP
     };
-    projectiles.push(proj);
+    tank.projectiles.push(proj);
 }
 
 function inside(x, y, vs) {
@@ -226,10 +228,12 @@ function inside(x, y, vs) {
 // let scoreMsgTimer = 0;
 // let scoreMsgRate = 50;
 
-function detectHit() {
-    projectiles.forEach(proj => {
+function detectHit(tank, enemies) {
+    for (let i = 0; i < tank.projectiles.length; i++) {
+        let proj = tank.projectiles[i];
         // zone of detection
-        enemies.forEach(tankE => {
+        for (let j = 0; j < enemies.length; j++) {
+            let tankE = enemies[j];
             let center = [tankE.posX, tankE.posY + tankOffset];
             let diagonalHalf = Math.sqrt(Math.pow(tankE.img.width * 0.5, 2) + Math.pow(tankE.img.height * 0.5 - tankOffset, 2));
             let pointtr = [diagonalHalf * Math.cos((45 - tankE.orient) * Math.PI / 180),
@@ -241,23 +245,24 @@ function detectHit() {
             let pointbl = [-pointtr[0], -pointtr[1]];
             let pointtl = [-pointbr[0], -pointbr[1]];
             let polygon = [pointtr, pointbr, pointbl, pointtl];
-            polygon.forEach(point => {
+            for (let k = 0; k < polygon.length; k++) {
+                let point = polygon[k];
                 point[0] += center[0];
                 point[1] += center[1];
                 drawRefDot(point[0], point[1]);
-            });
+            }
             // console.log(polygon);
             if (inside(proj.x, proj.y, polygon)) {
                 console.log("Hit!");
-                let i = projectiles.indexOf(proj);
-                projectiles.splice(i, 1);
+                tank.projectiles.splice(i, 1);
+                i--;
 
                 if (tankE.hp > 0) {
-                    tankE.hp -= proj.damage;
+                    tankE.hp -= tank.attack;
                 }
             }
-        });
-    });
+        }
+    }
 }
 
 function removeUI() {
@@ -295,7 +300,6 @@ function loadGameScene() {
     isOver = false;
     score = 0;
 
-    projectiles = [];
     enemies = [];
 
     // reset the position of player's tank
@@ -313,7 +317,9 @@ function loadGameScene() {
         attack: 10,
         fireTimer: 0,
         fireRate: 15,
-        img: tankPImg
+        projectiles: [],
+        img: tankPImg,
+        projImg: projectileImgP
     };
 
     for (let i = 0; i < enemyNum; i++) {
@@ -330,7 +336,9 @@ function loadGameScene() {
             hpMax: hpMaxE,
             fireTimer: 0,
             fireRate: 15,
-            img: tankEImg
+            projectiles: [],
+            img: tankEImg,
+            projImg: projectileImgE
         };
         enemies.push(enemy);
     }
@@ -347,18 +355,17 @@ function loadGameScene() {
         ////////// tank section //////////
         drawTank(tankP);
         tankP.fireTimer++;
+        detectHit(tankP, enemies);
 
         enemies.forEach(tankE => {
             if (tankE.hp > 0) {
                 drawTank(tankE);
+                detectHit(tankE, [tankP]);
             } else {
                 let i = enemies.indexOf(tankE);
                 enemies.splice(i, 1);
             }
         });
-
-        drawProjectiles();
-        detectHit();
 
         // draw the skull if hit
         // if (skull) {
