@@ -47,18 +47,6 @@ canvas {
     z-index: 1;
 }
 
-.hpBar {
-    position: absolute;
-    height: 10px;
-    width: 60px;
-}
-
-#energyIcon {
-    position: absolute;
-    left: 30px;
-    top: 30px;
-}
-
 #gameOverText {
     font-family: fantasy;
     font-size: 70px;

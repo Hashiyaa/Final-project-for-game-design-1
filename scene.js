@@ -1,11 +1,11 @@
 // @ts-check
 
-// get the main div
+// get the main div and canvas ready
 let div = document.getElementById("main");
 let canvas = /** @type {HTMLCanvasElement} */ (document.getElementById("canvas"));
 let context = canvas.getContext("2d");
 
-// create new img element
+// create assets
 let tankPImg = new Image();
 tankPImg.src = 'images/tank_player.png'; // Set source path
 let tankEImg = new Image();
@@ -15,18 +15,43 @@ projectileImg.src = 'images/projectile.png';
 
 // game settings
 let isOver = false;
+// set bounds
+let leftBound = 0.5 * tankPImg.width;
+let rightBound = canvas.width - 0.5 * tankPImg.width;
+let upperBound = 0.5 * tankPImg.width;
+let lowerBound = canvas.height - 0.5 * tankPImg.width;
+
+// UI settings
 let score = 0;
 let hScore = 0;
-let hp = 3000;
+let hpBarWidth = 60;
+let hpBarHeight = 10;
+let buttonW = 250;
+let buttonH = 100;
 
-// initial params of player's tank
-let tankP = {id: "p0", posX: 450, posY: 300, orient: 0, forward: 0, clockwise: 0, 
-    speedM: 4, speedR: 2, hp: 100, fireTimer: 0, fireRate: 15, img: tankPImg, hpBar: null};
+// tank gloal vars
+let hpMaxP = 100;
+let hpMaxE = 50;
 let tankOffset = 15;
 let projSpeed = 7;
 
-// projectiles
-let projectiles = [];
+// initial params of player's tank
+let tankP = {
+    id: "p0",
+    posX: 450,
+    posY: 300,
+    orient: 0,
+    forward: 0,
+    clockwise: 0,
+    speedM: 4,
+    speedR: 2,
+    hp: hpMaxP,
+    hpMax: hpMaxP,
+    attack: 10,
+    fireTimer: 0,
+    fireRate: 15,
+    img: tankPImg
+};
 
 // enemy parameters
 let enemies = [];
@@ -34,12 +59,8 @@ let enemySpawnPosX = 100;
 let enemySpawnPosY = 100;
 let enemyNum = 1;
 
-
-// set bounds
-let leftBound = 0.5 * tankPImg.width;
-let rightBound = canvas.width - 0.5 * tankPImg.width;
-let upperBound = 0.5 * tankPImg.width;
-let lowerBound = canvas.height - 0.5 * tankPImg.width;
+// projectiles
+let projectiles = [];
 
 // event listeners for keyboard
 window.onkeydown = function (event) {
@@ -55,20 +76,16 @@ window.onkeydown = function (event) {
     }
 
     // q
-    if (key === 81) {
-    }
+    if (key === 81) {}
 
     // w
-    if (key === 87) {
-    }
+    if (key === 87) {}
 
     // e
-    if (key === 69) {
-    }
+    if (key === 69) {}
 
     // r
-    if (key === 82) {
-    }
+    if (key === 82) {}
 
     // right arrow
     if (key === 39) {
@@ -88,7 +105,7 @@ window.onkeydown = function (event) {
     }
     // delete or backspace, for debug use
     else if (key === 8) {
-        hp = 0;
+        tankP.hp = 0;
     }
 };
 
@@ -98,18 +115,13 @@ window.onkeyup = function (event) {
     tankP.clockwise = 0;
 };
 
-// set up collectors
-// const collectorTypes = ['household_food_waste', 'residual_waste', 'recyclable_waste', 'hazardous_waste'];
-// let collectorIndex = 0;
-// let collector = collectorTypes[0];
-
 function drawTank(tank) {
     // update the orientation
     tank.orient += tank.clockwise * tank.speedR;
     // update the position
     let dirX = Math.sin(tank.orient / 180 * Math.PI);
     let dirY = -Math.cos(tank.orient / 180 * Math.PI);
-    if (((tank.posX >= leftBound && dirX * tank.forward <= 0) || (tank.posX <= rightBound && dirX * tank.forward >= 0)) && 
+    if (((tank.posX >= leftBound && dirX * tank.forward <= 0) || (tank.posX <= rightBound && dirX * tank.forward >= 0)) &&
         ((tank.posY >= upperBound && dirY * tank.forward <= 0) || (tank.posY <= lowerBound && dirY * tank.forward >= 0))) {
         tank.posX += dirX * tank.forward * tank.speedM;
         tank.posY += dirY * tank.forward * tank.speedM;
@@ -121,22 +133,34 @@ function drawTank(tank) {
     context.rotate(tank.orient / 180 * Math.PI);
     context.translate(0, -tankOffset);
     context.drawImage(tank.img, -tank.img.width * 0.5, -tank.img.height * 0.5);
+
+    context.translate(-0.5 * hpBarWidth, 0.5 * tank.img.height + 10);
+    context.fillStyle = "white";
+    context.beginPath();
+    context.moveTo(0, 0);
+    context.lineTo(hpBarWidth, 0);
+    context.lineTo(hpBarWidth, hpBarHeight);
+    context.lineTo(0, hpBarHeight);
+    context.closePath();
+    context.fill();
+    let hpRatio = tank.hp / tank.hpMax;
+    if (hpRatio > 0.5) {
+        context.fillStyle = "blue";
+    } else if (hpRatio > 0.25) {
+        context.fillStyle = "yellow";
+    } else {
+        context.fillStyle = "red";
+    }
+    context.fillRect(0, 0, hpRatio * hpBarWidth, hpBarHeight);
+    context.stroke();
     context.restore();
-    
-    tank.hpBar.style.top = tank.posY.toString() + "px";
-    tank.hpBar.style.left = tank.posX.toString() + "px";
+
     // drawRefDot(tank.posX, tank.posY);
 }
 
-function fire(tank) {  
-    let offsetX = Math.sin(tank.orient / 180 * Math.PI) * (tank.img.height * 0.5 + tankOffset);
-    let offsetY = -Math.cos(tank.orient / 180 * Math.PI) * (tank.img.height * 0.5 + tankOffset);
-    let proj = {x: tank.posX + offsetX, y: tank.posY + offsetY + tankOffset, a: tank.orient, img: projectileImg};
-    projectiles.push(proj);
-}
-
 function drawProjectiles() {
-    projectiles.forEach(proj => {
+    for (let i = 0; i < projectiles.length; i++) {
+        let proj = projectiles[i];
         context.save();
         if (proj.x >= 0 && proj.x <= canvas.width && proj.y >= 0 && proj.y <= canvas.height) {
             // update the position
@@ -144,52 +168,63 @@ function drawProjectiles() {
             let dirY = -Math.cos(proj.a / 180 * Math.PI);
             proj.x += dirX * projSpeed;
             proj.y += dirY * projSpeed;
+            context.translate(proj.x, proj.y);
+            context.rotate(proj.a / 180 * Math.PI);
+            context.drawImage(proj.img, -proj.img.width * 0.5, -proj.img.height * 0.5);
         } else {
-            let i = projectiles.indexOf(proj);
             projectiles.splice(i, 1);
+            i--;
+            // console.log(projectiles);
         }
-        context.translate(proj.x , proj.y);
-        context.rotate(proj.a / 180 * Math.PI);
-        context.drawImage(proj.img, -proj.img.width * 0.5, -proj.img.height * 0.5);
         context.restore();
-    });
-}
-
-function genEnemy() {
-    for (let i = 0; i < enemyNum; i++) {
-        let enemy = {id: "e" + i, posX: enemySpawnPosX, posY: enemySpawnPosY, orient: 0, forward: 0, clockwise: 1, 
-            speedM: 4, speedR: 0.5, hp: 100, fireTimer: 0, fireRate: 15, img: tankEImg, hpBar: null};
-        genHpBar(enemy);
-        enemies.push(enemy);
     }
 }
 
-function genHpBar(tank) {
-    let hpBar = document.createElement("progress");
-    hpBar.id = tank.id + "-hpBar";
-    hpBar.className = "UI hpBar";
-    hpBar.max = tank.hp;
-    hpBar.value = tank.hp;
-    // let top = tank.posY + tank.img.height * 0.5 + 10;
-    // let widthStr = hpBar.style.width;
-    // let left = tank.posX - 60 * 0.5; // hard code
-    // hpBar.style.top = top.toString() + "px";
-    // hpBar.style.left = left.toString() + "px";
-    tank.hpBar = hpBar;
-    div.appendChild(hpBar);
+function drawRefDot(posX, posY) {
+    context.save();
+    context.beginPath();
+    context.arc(posX, posY, 5, 0, Math.PI * 2);
+    context.fill();
+    context.restore();
 }
 
-// let garbages = [];
-// let garbageTypes = [householdWaste, residualWaste, recyclableWaste, hazardousWaste];
+function fire(tank) {
+    let offsetX = Math.sin(tank.orient / 180 * Math.PI) * (tank.img.height * 0.5 + tankOffset);
+    let offsetY = -Math.cos(tank.orient / 180 * Math.PI) * (tank.img.height * 0.5 + tankOffset);
+    let proj = {
+        x: tank.posX + offsetX,
+        y: tank.posY + offsetY + tankOffset,
+        a: tank.orient,
+        damage: tank.attack,
+        img: projectileImg
+    };
+    projectiles.push(proj);
+}
+
+function inside(x, y, vs) {
+    // ray-casting algorithm based on
+    // http://www.ecse.rpi.edu/Homepages/wrf/Research/Short_Notes/pnpoly.html
+    let inside = false;
+    for (let i = 0, j = vs.length - 1; i < vs.length; j = i++) {
+        let xi = vs[i][0],
+            yi = vs[i][1];
+        let xj = vs[j][0],
+            yj = vs[j][1];
+
+        let intersect = ((yi > y) != (yj > y)) && (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
+        if (intersect) inside = !inside;
+    }
+    return inside;
+}
 
 // handle skull showing up
 // let skull;
 // let skullTimer = 0;
 // let skullRate = 50;
 // handle prompt message
-let scoreMsg;
-let scoreMsgTimer = 0;
-let scoreMsgRate = 50;
+// let scoreMsg;
+// let scoreMsgTimer = 0;
+// let scoreMsgRate = 50;
 
 function detectHit() {
     projectiles.forEach(proj => {
@@ -197,60 +232,42 @@ function detectHit() {
         enemies.forEach(tankE => {
             let center = [tankE.posX, tankE.posY + tankOffset];
             let diagonalHalf = Math.sqrt(Math.pow(tankE.img.width * 0.5, 2) + Math.pow(tankE.img.height * 0.5 - tankOffset, 2));
-            let pointtr = [diagonalHalf * Math.cos((45 - tankE.orient) * Math.PI / 180), 
-                -diagonalHalf * Math.sin((45 - tankE.orient) * Math.PI / 180)];
-            let pointbr = [diagonalHalf * Math.cos((45 + tankE.orient) * Math.PI / 180), 
-                diagonalHalf * Math.sin((45 + tankE.orient) * Math.PI / 180)];
+            let pointtr = [diagonalHalf * Math.cos((45 - tankE.orient) * Math.PI / 180),
+                -diagonalHalf * Math.sin((45 - tankE.orient) * Math.PI / 180)
+            ];
+            let pointbr = [diagonalHalf * Math.cos((45 + tankE.orient) * Math.PI / 180),
+                diagonalHalf * Math.sin((45 + tankE.orient) * Math.PI / 180)
+            ];
             let pointbl = [-pointtr[0], -pointtr[1]];
             let pointtl = [-pointbr[0], -pointbr[1]];
             let polygon = [pointtr, pointbr, pointbl, pointtl];
-            polygon.forEach (point => {
+            polygon.forEach(point => {
                 point[0] += center[0];
                 point[1] += center[1];
+                drawRefDot(point[0], point[1]);
             });
             // console.log(polygon);
             if (inside(proj.x, proj.y, polygon)) {
                 console.log("Hit!");
                 let i = projectiles.indexOf(proj);
                 projectiles.splice(i, 1);
+
+                if (tankE.hp > 0) {
+                    tankE.hp -= proj.damage;
+                }
             }
         });
     });
 }
 
-function inside(x, y, vs) {
-    // ray-casting algorithm based on
-    // http://www.ecse.rpi.edu/Homepages/wrf/Research/Short_Notes/pnpoly.html
-
-    let inside = false;
-    for (let i = 0, j = vs.length - 1; i < vs.length; j = i++) {
-        let xi = vs[i][0], yi = vs[i][1];
-        let xj = vs[j][0], yj = vs[j][1];
-
-        let intersect = ((yi > y) != (yj > y)) && (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
-        if (intersect) inside = !inside;
-    }
-
-    return inside;
-}
-
-function drawRefDot(posX, posY) {
-    context.save();
-    context.beginPath();
-    context.arc(posX, posY, 10, 0, Math.PI * 2);
-    context.fill();
-    context.restore();
-}
-
 function removeUI() {
     // remove UI elements
     let UIs = document.getElementsByClassName('UI');
-    while(UIs[0])
+    while (UIs[0])
         UIs[0].parentNode.removeChild(UIs[0]);
 }
 
-let buttonW = 250;
-let buttonH = 100;
+
 function loadMenuScene() {
     removeUI();
 
@@ -275,7 +292,6 @@ function loadGameScene() {
     removeUI();
 
     // reset some global variables
-    hp = 3000;
     isOver = false;
     score = 0;
 
@@ -283,20 +299,45 @@ function loadGameScene() {
     enemies = [];
 
     // reset the position of player's tank
-    tankP = {id: "p0", posX: 450, posY: 300, orient: 0, forward: 0, clockwise: 0, 
-        speedM: 4, speedR: 2, hp: 100, fireTimer: 0, fireRate: 15, img: tankPImg, hpBar: null};
-    genHpBar(tankP);
-    
-    genEnemy();
+    tankP = {
+        id: "p0",
+        posX: 450,
+        posY: 300,
+        orient: 0,
+        forward: 0,
+        clockwise: 0,
+        speedM: 4,
+        speedR: 2,
+        hp: hpMaxP,
+        hpMax: hpMaxP,
+        attack: 10,
+        fireTimer: 0,
+        fireRate: 15,
+        img: tankPImg
+    };
 
-    // let energyIcon = document.createElement("img");
-    // energyIcon.id = "energyIcon";
-    // energyIcon.className = "UI";
-    // energyIcon.src = "images/energy.png";
-    // div.appendChild(energyIcon);
+    for (let i = 0; i < enemyNum; i++) {
+        let enemy = {
+            id: "e" + i,
+            posX: enemySpawnPosX,
+            posY: enemySpawnPosY,
+            orient: 0,
+            forward: 0,
+            clockwise: 1,
+            speedM: 4,
+            speedR: 0.5,
+            hp: hpMaxE,
+            hpMax: hpMaxE,
+            fireTimer: 0,
+            fireRate: 15,
+            img: tankEImg
+        };
+        enemies.push(enemy);
+    }
 
     let clock = 0;
     let offset = Date.now();
+
     function draw() {
         if (isOver) return;
 
@@ -308,12 +349,17 @@ function loadGameScene() {
         tankP.fireTimer++;
 
         enemies.forEach(tankE => {
-            drawTank(tankE);
+            if (tankE.hp > 0) {
+                drawTank(tankE);
+            } else {
+                let i = enemies.indexOf(tankE);
+                enemies.splice(i, 1);
+            }
         });
 
         drawProjectiles();
-        // console.log("x: " + posX + " y: " + posY);
         detectHit();
+
         // draw the skull if hit
         // if (skull) {
         //     if (skullTimer < skullRate) {
@@ -335,19 +381,19 @@ function loadGameScene() {
         context.save();
         context.fillStyle = "black";
         context.font = "16px Georgia";
-        context.fillText("Score: " + score, 80, 25);
-        context.fillText("Highest score: " + hScore, 180, 25);
+        context.fillText("Score: " + score, 60, 40);
+        context.fillText("Highest score: " + hScore, 180, 40);
         // context.fillText("Energy remaining: " + hp, 110, 70);
 
-        if (scoreMsg) {
-            if (scoreMsgTimer < scoreMsgRate) {
-                context.fillText(scoreMsg, 300, 70);
-                scoreMsgTimer++;
-            } else {
-                scoreMsg = null;
-                scoreMsgTimer = 0;
-            }
-        }
+        // if (scoreMsg) {
+        //     if (scoreMsgTimer < scoreMsgRate) {
+        //         context.fillText(scoreMsg, 300, 70);
+        //         scoreMsgTimer++;
+        //     } else {
+        //         scoreMsg = null;
+        //         scoreMsgTimer = 0;
+        //     }
+        // }
 
         clock += (Date.now() - offset) / 1000;
         let second = Math.floor(clock % 60).toString();
@@ -355,13 +401,11 @@ function loadGameScene() {
         let minute = Math.floor(clock / 60).toString();
         if ((Number(minute) < 10)) minute = '0' + minute;
         // console.log(second);
-        context.fillText("Time: " + minute + " : " + second, 420, 43);
+        context.fillText("Time: " + minute + " : " + second, 700, 40);
         offset = Date.now();
         context.restore();
         // update hp and energy bar
-        if (hp > 0) {
-            hp--;
-        } else {
+        if (tankP.hp <= 0) {
             loadGameOverScene();
         }
 
@@ -375,8 +419,6 @@ function loadGameOverScene() {
     removeUI();
 
     isOver = true;
-    // skullTimer = skullRate;
-    // garbages = [];
 
     context.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -412,14 +454,14 @@ function loadGameOverScene() {
     div.appendChild(gameOverMenu);
 }
 
-window.onload = function() {
+window.onload = function () {
     let audioButton = document.createElement("button");
     audioButton.id = "audioButton";
     audioButton.style.backgroundImage = "url('images/audio.png')";
 
     let audio = /** @type {HTMLAudioElement} */ (document.getElementById("music"));
-    audio.play();
-    audioButton.onclick = function() {
+    // audio.play();
+    audioButton.onclick = function () {
         if (audio.muted) {
             audio.muted = false;
             audioButton.style.backgroundImage = "url('images/audio.png')";
