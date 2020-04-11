@@ -47,12 +47,10 @@ canvas {
     z-index: 1;
 }
 
-#energyBar {
+.hpBar {
     position: absolute;
-    left: 80px;
-    top: 35px;
     height: 10px;
-    width: 240px;
+    width: 60px;
 }
 
 #energyIcon {

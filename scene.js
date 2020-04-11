@@ -5,39 +5,41 @@ let div = document.getElementById("main");
 let canvas = /** @type {HTMLCanvasElement} */ (document.getElementById("canvas"));
 let context = canvas.getContext("2d");
 
+// create new img element
+let tankPImg = new Image();
+tankPImg.src = 'images/tank_player.png'; // Set source path
+let tankEImg = new Image();
+tankEImg.src = 'images/tank_enemy.png';
+let projectileImg = new Image();
+projectileImg.src = 'images/projectile.png';
+
 // game settings
 let isOver = false;
 let score = 0;
 let hScore = 0;
 let hp = 3000;
 
-// initial params of spaceship
-let posX = 450;
-let posY = 450;
-let orient = 0;
-let forward = 0;
-let clockwise = 0;
-let speedM = 7;
-let speedR = 3;
-
-let fireTimer = 0;
-let fireRate = 15;
+// initial params of player's tank
+let tankP = {id: "p0", posX: 450, posY: 300, orient: 0, forward: 0, clockwise: 0, 
+    speedM: 4, speedR: 2, hp: 100, fireTimer: 0, fireRate: 15, img: tankPImg, hpBar: null};
+let tankOffset = 15;
 let projSpeed = 7;
 
 // projectiles
 let projectiles = [];
 
-// create new img element
-let spaceshipImg = new Image(); 
-spaceshipImg.src = 'images/spaceship.png'; // Set source path
-let projectileImg = new Image();
-projectileImg.src = 'images/projectile.png';
+// enemy parameters
+let enemies = [];
+let enemySpawnPosX = 100;
+let enemySpawnPosY = 100;
+let enemyNum = 1;
+
 
 // set bounds
-let leftBound = 0.5 * spaceshipImg.width;
-let rightBound = canvas.width - 0.5 * spaceshipImg.width;
-let upperBound = 0.5 * spaceshipImg.height;
-let lowerBound = canvas.height - 0.5 * spaceshipImg.height;
+let leftBound = 0.5 * tankPImg.width;
+let rightBound = canvas.width - 0.5 * tankPImg.width;
+let upperBound = 0.5 * tankPImg.width;
+let lowerBound = canvas.height - 0.5 * tankPImg.width;
 
 // event listeners for keyboard
 window.onkeydown = function (event) {
@@ -46,9 +48,9 @@ window.onkeydown = function (event) {
 
     // a
     if (key === 65) {
-        if (fireTimer >= fireRate) {
-            fire();
-            fireTimer = 0;
+        if (tankP.fireTimer >= tankP.fireRate) {
+            fire(tankP);
+            tankP.fireTimer = 0;
         }
     }
 
@@ -70,19 +72,19 @@ window.onkeydown = function (event) {
 
     // right arrow
     if (key === 39) {
-        clockwise = 1;
+        tankP.clockwise = 1;
     }
     // left arrow
     else if (key === 37) {
-        clockwise = -1;
+        tankP.clockwise = -1;
     }
     // top arrow 
     else if (key === 38) {
-        forward = 1;
+        tankP.forward = 1;
     }
     // down arrow
     else if (key === 40) {
-        forward = -1;
+        tankP.forward = -1;
     }
     // delete or backspace, for debug use
     else if (key === 8) {
@@ -92,8 +94,8 @@ window.onkeydown = function (event) {
 
 window.onkeyup = function (event) {
     // stop moving as soon as any key is up
-    forward = 0;
-    clockwise = 0;
+    tankP.forward = 0;
+    tankP.clockwise = 0;
 };
 
 // set up collectors
@@ -101,31 +103,35 @@ window.onkeyup = function (event) {
 // let collectorIndex = 0;
 // let collector = collectorTypes[0];
 
-// let panY = 75; // offset of pan relative to spaceship
-
-function drawSpaceship() {
+function drawTank(tank) {
     // update the orientation
-    orient += clockwise * speedR;
+    tank.orient += tank.clockwise * tank.speedR;
     // update the position
-    let dirX = Math.sin(orient / 180 * Math.PI);
-    let dirY = -Math.cos(orient / 180 * Math.PI);
-    if (((posX >= leftBound && dirX * forward <= 0) || (posX <= rightBound && dirX * forward >= 0)) && 
-        ((posY >= upperBound && dirY * forward <= 0) || (posY <= lowerBound && dirY * forward >= 0))) {
-        posX += dirX * forward * speedM;
-        posY += dirY * forward * speedM;
+    let dirX = Math.sin(tank.orient / 180 * Math.PI);
+    let dirY = -Math.cos(tank.orient / 180 * Math.PI);
+    if (((tank.posX >= leftBound && dirX * tank.forward <= 0) || (tank.posX <= rightBound && dirX * tank.forward >= 0)) && 
+        ((tank.posY >= upperBound && dirY * tank.forward <= 0) || (tank.posY <= lowerBound && dirY * tank.forward >= 0))) {
+        tank.posX += dirX * tank.forward * tank.speedM;
+        tank.posY += dirY * tank.forward * tank.speedM;
     }
     // draw
     context.save();
-    context.translate(posX, posY);
-    context.rotate(orient / 180 * Math.PI);
-    context.drawImage(spaceshipImg, -spaceshipImg.width * 0.5, -spaceshipImg.height * 0.5);
+    context.translate(tank.posX, tank.posY);
+    context.translate(0, tankOffset);
+    context.rotate(tank.orient / 180 * Math.PI);
+    context.translate(0, -tankOffset);
+    context.drawImage(tank.img, -tank.img.width * 0.5, -tank.img.height * 0.5);
     context.restore();
+    
+    tank.hpBar.style.top = tank.posY.toString() + "px";
+    tank.hpBar.style.left = tank.posX.toString() + "px";
+    // drawRefDot(tank.posX, tank.posY);
 }
 
-function fire() {  
-    let offsetX = Math.sin(orient / 180 * Math.PI) * spaceshipImg.height * 0.5;
-    let offsetY = -Math.cos(orient / 180 * Math.PI) * spaceshipImg.height * 0.5;
-    let proj = {x: posX + offsetX, y: posY + offsetY, a: orient, img: projectileImg};
+function fire(tank) {  
+    let offsetX = Math.sin(tank.orient / 180 * Math.PI) * (tank.img.height * 0.5 + tankOffset);
+    let offsetY = -Math.cos(tank.orient / 180 * Math.PI) * (tank.img.height * 0.5 + tankOffset);
+    let proj = {x: tank.posX + offsetX, y: tank.posY + offsetY + tankOffset, a: tank.orient, img: projectileImg};
     projectiles.push(proj);
 }
 
@@ -140,13 +146,37 @@ function drawProjectiles() {
             proj.y += dirY * projSpeed;
         } else {
             let i = projectiles.indexOf(proj);
-            projectiles.splice(i, i + 1);
+            projectiles.splice(i, 1);
         }
         context.translate(proj.x , proj.y);
         context.rotate(proj.a / 180 * Math.PI);
         context.drawImage(proj.img, -proj.img.width * 0.5, -proj.img.height * 0.5);
         context.restore();
     });
+}
+
+function genEnemy() {
+    for (let i = 0; i < enemyNum; i++) {
+        let enemy = {id: "e" + i, posX: enemySpawnPosX, posY: enemySpawnPosY, orient: 0, forward: 0, clockwise: 1, 
+            speedM: 4, speedR: 0.5, hp: 100, fireTimer: 0, fireRate: 15, img: tankEImg, hpBar: null};
+        genHpBar(enemy);
+        enemies.push(enemy);
+    }
+}
+
+function genHpBar(tank) {
+    let hpBar = document.createElement("progress");
+    hpBar.id = tank.id + "-hpBar";
+    hpBar.className = "UI hpBar";
+    hpBar.max = tank.hp;
+    hpBar.value = tank.hp;
+    // let top = tank.posY + tank.img.height * 0.5 + 10;
+    // let widthStr = hpBar.style.width;
+    // let left = tank.posX - 60 * 0.5; // hard code
+    // hpBar.style.top = top.toString() + "px";
+    // hpBar.style.left = left.toString() + "px";
+    tank.hpBar = hpBar;
+    div.appendChild(hpBar);
 }
 
 // let garbages = [];
@@ -161,41 +191,31 @@ let scoreMsg;
 let scoreMsgTimer = 0;
 let scoreMsgRate = 50;
 
-function detectCollision() {
-    // let panImg = new Image();
-    // panImg.src = "images/dustpan.png";
-    // for (let i = 0; i < garbages.length; i++) {
-    //     // let gbgX = garbageList[i].getX() + garbageList[i].
-    //     let g = garbages[i];
-    //     // zone of detection
-    //     let polygon = [[posX - panImg.width * 0.5, posY - panY - panImg.height * 0.5], 
-    //         [posX + panImg.width * 0.5, posY - panY - panImg.height * 0.5], 
-    //         [posX + panImg.width * 0.5, posY - panY + panImg.height * 0.5], 
-    //         [posX - panImg.width * 0.5, posY - panY + panImg.height * 0.5]];
-    //     if (inside(g.posX, g.posY, polygon)) {
-    //         if (g.type === collector) {
-    //             let hit = new Audio("sound/correct.wav");
-    //             hit.load();
-    //             hit.play();
-    //             scoreMsg = "+100";
-    //             hp = hp + 100; // 100 hp award for collecting the correct garbage
-    //             score++;
-    //         } else {
-    //             let miss = new Audio("sound/hitting.wav");
-    //             miss.load();
-    //             miss.play();
-    //             scoreMsg = "-50";
-    //             if (hp > 50) {
-    //                 hp -= 50; // 50 hp penalty for hitting the wrong garbage
-    //             } else {
-    //                 hp = 0;
-    //             }
-    //             skull = g; // make skull at the same position of that garbage
-    //         }
-    //          // remove garbage from the array
-    //         garbages.splice(i, 1);
-    //     }
-    // }
+function detectHit() {
+    projectiles.forEach(proj => {
+        // zone of detection
+        enemies.forEach(tankE => {
+            let center = [tankE.posX, tankE.posY + tankOffset];
+            let diagonalHalf = Math.sqrt(Math.pow(tankE.img.width * 0.5, 2) + Math.pow(tankE.img.height * 0.5 - tankOffset, 2));
+            let pointtr = [diagonalHalf * Math.cos((45 - tankE.orient) * Math.PI / 180), 
+                -diagonalHalf * Math.sin((45 - tankE.orient) * Math.PI / 180)];
+            let pointbr = [diagonalHalf * Math.cos((45 + tankE.orient) * Math.PI / 180), 
+                diagonalHalf * Math.sin((45 + tankE.orient) * Math.PI / 180)];
+            let pointbl = [-pointtr[0], -pointtr[1]];
+            let pointtl = [-pointbr[0], -pointbr[1]];
+            let polygon = [pointtr, pointbr, pointbl, pointtl];
+            polygon.forEach (point => {
+                point[0] += center[0];
+                point[1] += center[1];
+            });
+            // console.log(polygon);
+            if (inside(proj.x, proj.y, polygon)) {
+                console.log("Hit!");
+                let i = projectiles.indexOf(proj);
+                projectiles.splice(i, 1);
+            }
+        });
+    });
 }
 
 function inside(x, y, vs) {
@@ -259,28 +279,22 @@ function loadGameScene() {
     isOver = false;
     score = 0;
 
-    // reset the position of spaceship
-    posX = 450;
-    posY = 450;
-    orient = 0;
-    fireTimer = 0;
+    // reset the position of player's tank
+    tankP = {id: "p0", posX: 450, posY: 300, orient: 0, forward: 0, clockwise: 0, 
+        speedM: 4, speedR: 2, hp: 100, fireTimer: 0, fireRate: 15, img: tankPImg, hpBar: null};
+    genHpBar(tankP);
+    
+    genEnemy();
 
     projectiles = [];
 
-    let energyBar = document.createElement("progress");
-    energyBar.id = "energyBar";
-    energyBar.className = "UI";
-    energyBar.max = hp;
-    energyBar.value = 0;
-    div.appendChild(energyBar);
 
-    let energyIcon = document.createElement("img");
-    energyIcon.id = "energyIcon";
-    energyIcon.className = "UI";
-    energyIcon.src = "images/energy.png";
-    div.appendChild(energyIcon);
+    // let energyIcon = document.createElement("img");
+    // energyIcon.id = "energyIcon";
+    // energyIcon.className = "UI";
+    // energyIcon.src = "images/energy.png";
+    // div.appendChild(energyIcon);
 
-    let garbageRate = 100;
     let clock = 0;
     let offset = Date.now();
     function draw() {
@@ -289,14 +303,17 @@ function loadGameScene() {
         context.clearRect(0, 0, canvas.width, canvas.height);
         context.save();
 
-        ////////// spaceship section //////////
-        drawSpaceship();
-        fireTimer++;
+        ////////// tank section //////////
+        drawTank(tankP);
+        tankP.fireTimer++;
+
+        enemies.forEach(tankE => {
+            drawTank(tankE);
+        });
 
         drawProjectiles();
         // console.log("x: " + posX + " y: " + posY);
-        // check for collision between spaceship and garbage constantly
-        detectCollision();
+        detectHit();
         // draw the skull if hit
         // if (skull) {
         //     if (skullTimer < skullRate) {
@@ -316,14 +333,11 @@ function loadGameScene() {
         if (score > hScore) hScore = score;
         // draw texts
         context.save();
-        context.fillStyle = "white";
-        // let collectorWords = collector.split("_");
-        // let collectorInfo = collectorWords.join(" ");
+        context.fillStyle = "black";
         context.font = "16px Georgia";
-        // context.fillText("Collector type now: " + collectorInfo, 290, 580);
         context.fillText("Score: " + score, 80, 25);
         context.fillText("Highest score: " + hScore, 180, 25);
-        context.fillText("Energy remaining: " + hp, 110, 70);
+        // context.fillText("Energy remaining: " + hp, 110, 70);
 
         if (scoreMsg) {
             if (scoreMsgTimer < scoreMsgRate) {
@@ -350,7 +364,6 @@ function loadGameScene() {
         } else {
             loadGameOverScene();
         }
-        energyBar.value = hp;
 
         context.restore();
         window.requestAnimationFrame(draw);
