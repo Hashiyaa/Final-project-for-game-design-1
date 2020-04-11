@@ -279,15 +279,15 @@ function loadGameScene() {
     isOver = false;
     score = 0;
 
+    projectiles = [];
+    enemies = [];
+
     // reset the position of player's tank
     tankP = {id: "p0", posX: 450, posY: 300, orient: 0, forward: 0, clockwise: 0, 
         speedM: 4, speedR: 2, hp: 100, fireTimer: 0, fireRate: 15, img: tankPImg, hpBar: null};
     genHpBar(tankP);
     
     genEnemy();
-
-    projectiles = [];
-
 
     // let energyIcon = document.createElement("img");
     // energyIcon.id = "energyIcon";
