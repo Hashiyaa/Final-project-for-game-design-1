@@ -36,6 +36,7 @@ let hpMaxP = 100;
 let hpMaxE = 50;
 let tankOffset = 15;
 let projSpeed = 7;
+let minMoveE = 100;
 
 // initial params of player's tank
 let tankP = {
@@ -149,7 +150,7 @@ function drawTank(tank) {
     if (hpRatio > 0.5) {
         context.fillStyle = "blue";
     } else if (hpRatio > 0.25) {
-        context.fillStyle = "yellow";
+        context.fillStyle = "orange";
     } else {
         context.fillStyle = "red";
     }
@@ -158,7 +159,7 @@ function drawTank(tank) {
     context.restore();
 
     drawProjectiles(tank);
-    // drawRefDot(tank.posX, tank.posY);
+    drawRefDot(tank.posX, tank.posY);
 }
 
 function drawProjectiles(tank) {
@@ -191,6 +192,33 @@ function drawRefDot(posX, posY) {
     context.restore();
 }
 
+function searchForPlayer(tank, tankP) {
+    let vec1 = [Math.sin(tank.orient / 180 * Math.PI), -Math.cos(tank.orient / 180 * Math.PI)];
+    let vec2 = [tankP.posX - tank.posX, tankP.posY - tank.posY];
+    let vec1Mag = Math.sqrt(vec1[0] * vec1[0] + vec1[1] * vec1[1]);
+    let vec2Mag = Math.sqrt(vec2[0] * vec2[0] + vec2[1] * vec2[1]);
+    let angle = Math.acos((vec1[0] * vec2[0] + vec1[1] * vec2[1]) / (vec1Mag * vec2Mag)) / Math.PI * 180;
+    // if (vec2[0] < 0) angle = 0 - angle;
+    // console.log("Orientation: " + tank.orient + ", Angle: " + angle);
+    if (Math.abs(angle) < 1) {
+        // console.log("Fire!");
+        tank.forward = 0;
+        tank.clockwise = 0;
+        if (tank.fireTimer >= tank.fireRate) {
+            fire(tank);
+            tank.fireTimer = 0;
+        }
+    } else if (Math.abs(angle) < tank.view * 0.5) {
+        // console.log("Detected!");
+        tank.forward = 0;
+        let dir = angle / Math.abs(angle);
+        tank.clockwise = 1.5 * dir;
+    } else {
+        tank.clockwise = 0;
+        tank.forward = 1;
+    }
+}
+
 function fire(tank) {
     let offsetX = Math.sin(tank.orient / 180 * Math.PI) * (tank.img.height * 0.5 + tankOffset);
     let offsetY = -Math.cos(tank.orient / 180 * Math.PI) * (tank.img.height * 0.5 + tankOffset);
@@ -198,7 +226,7 @@ function fire(tank) {
         x: tank.posX + offsetX,
         y: tank.posY + offsetY + tankOffset,
         a: tank.orient,
-        img: projectileImgP
+        img: tank.projImg
     };
     tank.projectiles.push(proj);
 }
@@ -327,13 +355,16 @@ function loadGameScene() {
             id: "e" + i,
             posX: enemySpawnPosX,
             posY: enemySpawnPosY,
-            orient: 0,
+            orient: 90,
             forward: 0,
-            clockwise: 1,
-            speedM: 4,
+            clockwise: 0,
+            speedM: 2,
             speedR: 0.5,
             hp: hpMaxE,
             hpMax: hpMaxE,
+            attack: 5,
+            curMove: 0,
+            view: 60,
             fireTimer: 0,
             fireRate: 15,
             projectiles: [],
@@ -360,6 +391,8 @@ function loadGameScene() {
         enemies.forEach(tankE => {
             if (tankE.hp > 0) {
                 drawTank(tankE);
+                tankE.fireTimer++;
+                searchForPlayer(tankE, tankP);
                 detectHit(tankE, [tankP]);
             } else {
                 let i = enemies.indexOf(tankE);
