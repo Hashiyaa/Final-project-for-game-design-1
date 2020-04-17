@@ -53,6 +53,7 @@ let shellP = {
     projImg: shellImgP
 };
 mainWeaponsP.push(shellP);
+// armor-piercing shells
 let apShell = {
     type: 'm',
     damage: 20,
@@ -63,6 +64,7 @@ let apShell = {
 mainWeaponsP.push(apShell);
 
 let secondaryWeaponsP = [];
+// machine gun
 let machineGunP = {
     type: 's',
     damage: 5,
@@ -105,9 +107,9 @@ let tankP = {
     speedR: 2,
     hp: hpMaxP,
     hpMax: hpMaxP,
-    mWeapon: 0,
+    mWeapon: 0, // index in the main weapon array
     sWeapon: 0,
-    weaponType: 'm',
+    weaponType: 'm', // either main or secondary
     curWeapon: shellP,
     fireTimer: 0,
     projectiles: [],
