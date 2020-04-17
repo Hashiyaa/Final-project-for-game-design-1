@@ -8,12 +8,17 @@ let context = canvas.getContext("2d");
 // create assets
 let tankPImg = new Image();
 tankPImg.src = 'images/tank_player.png'; // Set source path
+let shellImgP = new Image();
+shellImgP.src = 'images/shell_player.png';
+let apShellImgP = new Image();
+apShellImgP.src = 'images/apShell_player.png';
+let mgBulletImgP = new Image();
+mgBulletImgP.src = 'images/mgBullet_player.png';
+
 let tankEImg = new Image();
 tankEImg.src = 'images/tank_enemy.png';
-let projectileImgP = new Image();
-projectileImgP.src = 'images/projectile_player.png';
-let projectileImgE = new Image();
-projectileImgE.src = 'images/projectile_enemy.png';
+let shellImgE = new Image();
+shellImgE.src = 'images/shell_enemy.png';
 
 // game settings
 let isOver = false;
@@ -32,11 +37,60 @@ let buttonW = 250;
 let buttonH = 100;
 
 // tank gloal vars
-let hpMaxP = 100;
+let hpMaxP = 1000;
 let hpMaxE = 50;
 let tankOffset = 15;
 let projSpeed = 7;
 let minMoveE = 100;
+
+// stats for weapons
+let mainWeaponsP = [];
+let shellP = {
+    type: 'm',
+    damage: 10,
+    fireRate: 15, // the smaller, the faster
+    projSpeed: 7,
+    projImg: shellImgP
+};
+mainWeaponsP.push(shellP);
+let apShell = {
+    type: 'm',
+    damage: 20,
+    fireRate: 30,
+    projSpeed: 7,
+    projImg: apShellImgP
+};
+mainWeaponsP.push(apShell);
+
+let secondaryWeaponsP = [];
+let machineGunP = {
+    type: 's',
+    damage: 5,
+    fireRate: 5,
+    projSpeed: 10,
+    projImg: mgBulletImgP
+};
+secondaryWeaponsP.push(machineGunP);
+
+let mainWeaponsE = [];
+let shellE = {
+    type: 'm',
+    damage: 10,
+    fireRate: 15,
+    projSpeed: 7,
+    projImg: shellImgE
+};
+mainWeaponsE.push(shellE);
+
+let secondaryWeaponsE = [];
+let machineGunE = {
+    type: 's',
+    damage: 5,
+    fireRate: 5,
+    projSpeed: 10,
+    projImg: shellImgE
+};
+secondaryWeaponsE.push(machineGunE);
 
 // initial params of player's tank
 let tankP = {
@@ -51,12 +105,13 @@ let tankP = {
     speedR: 2,
     hp: hpMaxP,
     hpMax: hpMaxP,
-    attack: 10,
+    mWeapon: 0,
+    sWeapon: 0,
+    weaponType: 'm',
+    curWeapon: shellP,
     fireTimer: 0,
-    fireRate: 15,
     projectiles: [],
-    img: tankPImg,
-    projImg: projectileImgP
+    img: tankPImg
 };
 
 // enemy parameters
@@ -64,31 +119,33 @@ let enemies = [];
 let enemySpawns = [];
 let enemyNum = 2;
 
-
 // event listeners for keyboard
 window.onkeydown = function (event) {
     event.preventDefault();
     var key = event.keyCode; //Key code of key pressed
 
-    // a
-    if (key === 65) {
-        if (tankP.fireTimer >= tankP.fireRate) {
+    // space
+    if (key === 32) {
+        if (tankP.fireTimer >= tankP.curWeapon.fireRate) {
             fire(tankP);
             tankP.fireTimer = 0;
         }
     }
 
-    // q
-    if (key === 81) {}
+    // 1
+    if (key === 49) {
+        tankP.weaponType = 'm';
+    }
 
-    // w
-    if (key === 87) {}
+    // 2
+    if (key === 50) {
+        tankP.weaponType = 's';
+    }
 
-    // e
-    if (key === 69) {}
+    // 3
+    if (key === 51) {
 
-    // r
-    if (key === 82) {}
+    }
 
     // right arrow
     if (key === 39) {
@@ -182,6 +239,16 @@ function drawRefDot(posX, posY) {
     context.restore();
 }
 
+function switchWeapon(tank) {
+    let mainWeapons = tank.id.charAt[0] = 'p' ? mainWeaponsP : mainWeaponsE;
+    let secondaryWeapons = tank.id.charAt[0] = 'p' ? secondaryWeaponsP : secondaryWeaponsE;
+    if (tank.weaponType == 'm') {
+        tank.curWeapon = mainWeapons[tank.mWeapon];
+    } else {
+        tank.curWeapon = secondaryWeapons[tank.sWeapon];
+    }
+}
+
 function move(tank) {
     if (tank.obstacle * tank.forward > 0) {
         // console.log("Stuck!");
@@ -223,7 +290,7 @@ function searchForPlayer(tank, tankP) {
         // console.log("Fire!");
         tank.forward = 0;
         tank.clockwise = 0;
-        if (tank.fireTimer >= tank.fireRate) {
+        if (tank.fireTimer >= tank.curWeapon.fireRate) {
             fire(tank);
             tank.fireTimer = 0;
         }
@@ -244,7 +311,7 @@ function fire(tank) {
         x: tank.posX + offsetX,
         y: tank.posY + offsetY + tankOffset,
         a: tank.orient,
-        img: tank.projImg
+        img: tank.curWeapon.projImg
     };
     tank.projectiles.push(proj);
 }
@@ -347,7 +414,7 @@ function detectHit(tank, enemies) {
                 i--;
 
                 if (tankE.hp > 0) {
-                    tankE.hp -= tank.attack;
+                    tankE.hp -= tank.curWeapon.damage;
                 }
             }
         }
@@ -360,7 +427,6 @@ function removeUI() {
     while (UIs[0])
         UIs[0].parentNode.removeChild(UIs[0]);
 }
-
 
 function loadMenuScene() {
     removeUI();
@@ -404,12 +470,13 @@ function loadGameScene() {
         speedR: 2,
         hp: hpMaxP,
         hpMax: hpMaxP,
-        attack: 10,
+        mWeapon: 1,
+        sWeapon: 0,
+        weaponType: 'm',
+        curWeapon: shellP,
         fireTimer: 0,
-        fireRate: 15,
         projectiles: [],
-        img: tankPImg,
-        projImg: projectileImgP
+        img: tankPImg
     };
 
     for (let i = 0; i < enemyNum; i++) {
@@ -428,14 +495,15 @@ function loadGameScene() {
             speedR: 0.5,
             hp: hpMaxE,
             hpMax: hpMaxE,
-            attack: 0,
             curMove: 0,
+            mWeapon: 0,
+            sWeapon: 0,
+            weaponType: 'm',
+            curWeapon: shellE,
             view: 30,
             fireTimer: 0,
-            fireRate: 15,
             projectiles: [],
             img: tankEImg,
-            projImg: projectileImgE
         };
         enemies.push(enemy);
     }
@@ -465,6 +533,7 @@ function loadGameScene() {
         });
 
         drawTank(tankP);
+        switchWeapon(tankP);
         move(tankP);
         detectHit(tankP, enemies);
         tankP.fireTimer++;
