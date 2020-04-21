@@ -12,6 +12,8 @@ let shellImgP = new Image();
 shellImgP.src = 'images/shell_player.png';
 let apShellImgP = new Image();
 apShellImgP.src = 'images/apShell_player.png';
+let heBombImgP = new Image();
+heBombImgP.src = 'images/heBombs_player.png';
 let mgBulletImgP = new Image();
 mgBulletImgP.src = 'images/mgBullet_player.png';
 
@@ -62,6 +64,16 @@ let apShell = {
     projImg: apShellImgP
 };
 mainWeaponsP.push(apShell);
+
+// High-explosive bombs
+let heBomb = {
+    type: 'm',
+    damage: 40,
+    fireRate: 50,
+    projSpeed: 10,
+    projImg: heBombImgP
+};
+mainWeaponsP.push(heBomb);
 
 let secondaryWeaponsP = [];
 // machine gun
