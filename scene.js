@@ -12,8 +12,8 @@ let shellImgP = new Image();
 shellImgP.src = 'images/shell_player.png';
 let apShellImgP = new Image();
 apShellImgP.src = 'images/apShell_player.png';
-let heBombImgP = new Image();
-heBombImgP.src = 'images/heBombs_player.png';
+let heShellImgP = new Image();
+heShellImgP.src = 'images/heShell_player.png';
 let mgBulletImgP = new Image();
 mgBulletImgP.src = 'images/mgBullet_player.png';
 
@@ -24,6 +24,7 @@ shellImgE.src = 'images/shell_enemy.png';
 
 // game settings
 let isOver = false;
+let isWinning = false;
 // set bounds
 let leftBound = 0.5 * tankPImg.width;
 let rightBound = canvas.width - 0.5 * tankPImg.width;
@@ -39,7 +40,7 @@ let buttonW = 250;
 let buttonH = 100;
 
 // tank gloal vars
-let hpMaxP = 1000;
+let hpMaxP = 200;
 let hpMaxE = 50;
 let tankOffset = 15;
 let projSpeed = 7;
@@ -66,14 +67,14 @@ let apShell = {
 mainWeaponsP.push(apShell);
 
 // High-explosive bombs
-let heBomb = {
+let heShell = {
     type: 'm',
     damage: 40,
     fireRate: 50,
-    projSpeed: 10,
-    projImg: heBombImgP
+    projSpeed: 7,
+    projImg: heShellImgP
 };
-mainWeaponsP.push(heBomb);
+mainWeaponsP.push(heShell);
 
 let secondaryWeaponsP = [];
 // machine gun
@@ -107,26 +108,7 @@ let machineGunE = {
 secondaryWeaponsE.push(machineGunE);
 
 // initial params of player's tank
-let tankP = {
-    id: "p0",
-    posX: 450,
-    posY: 300,
-    orient: 0,
-    obstacle: 0,
-    forward: 0,
-    clockwise: 0,
-    speedM: 4,
-    speedR: 2,
-    hp: hpMaxP,
-    hpMax: hpMaxP,
-    mWeapon: 0, // index in the main weapon array
-    sWeapon: 0,
-    weaponType: 'm', // either main or secondary
-    curWeapon: shellP,
-    fireTimer: 0,
-    projectiles: [],
-    img: tankPImg
-};
+let tankP;
 
 // enemy parameters
 let enemies = [];
@@ -220,7 +202,7 @@ function drawTank(tank) {
     context.restore();
 
     drawProjectiles(tank);
-    drawRefDot(tank.posX, tank.posY);
+    // drawRefDot(tank.posX, tank.posY);
 }
 
 function drawProjectiles(tank) {
@@ -372,7 +354,7 @@ function getPolygon(tank, mode) {
             point[0] += tankOffset * Math.sin(tank.orient * Math.PI / 180);
             point[1] += -tankOffset * Math.cos(tank.orient * Math.PI / 180);
         }
-        drawRefDot(point[0], point[1]);
+        // drawRefDot(point[0], point[1]);
     }
     return polygon;
 }
@@ -458,6 +440,16 @@ function loadMenuScene() {
     startButton.onclick = loadGameScene;
     startMenu.appendChild(startButton);
 
+    // Temporary instructions
+    let instructionText = document.createElement("p");
+    instructionText.id = "instructionText";
+    instructionText.innerHTML = 
+        "1. Use up and down arrow keys to move forward and backward;\n" +
+        "2. Use left and right arrow keys to turn anti-clockwise and clockwise;\n" + 
+        "3. Use 1 and 2 to switch between the main and secondary weapon;\n" + 
+        "4. Use space to shoot!";
+    startMenu.appendChild(instructionText);
+
     div.appendChild(startMenu);
 }
 
@@ -484,7 +476,7 @@ function loadGameScene() {
         speedR: 2,
         hp: hpMaxP,
         hpMax: hpMaxP,
-        mWeapon: 1,
+        mWeapon: 0,
         sWeapon: 0,
         weaponType: 'm',
         curWeapon: shellP,
@@ -543,6 +535,7 @@ function loadGameScene() {
             } else {
                 let i = enemies.indexOf(tankE);
                 enemies.splice(i, 1);
+                score += 50;
             }
         });
 
@@ -598,6 +591,11 @@ function loadGameScene() {
         context.restore();
         // update hp and energy bar
         if (tankP.hp <= 0) {
+            isWinning = false;
+            loadGameOverScene();
+        }
+        if (enemies.length == 0) {
+            isWinning = true;
             loadGameOverScene();
         }
 
@@ -619,7 +617,11 @@ function loadGameOverScene() {
 
     let gameOverText = document.createElement("p");
     gameOverText.id = "gameOverText";
-    gameOverText.innerHTML = "GAME OVER";
+    if (isWinning) {
+        gameOverText.innerHTML = "YOU WIN!";
+    } else {
+        gameOverText.innerHTML = "GAME OVER";
+    }
     gameOverMenu.appendChild(gameOverText);
 
     let scoreText = document.createElement("p");

@@ -27,6 +27,12 @@ canvas {
     color: rgb(200, 240, 0);
 }
 
+#instructionText {
+    white-space: pre-line;
+    font-size: 20px;
+    line-height: 30px;
+}
+
 #main {
     position: relative;
     width: 900px;
