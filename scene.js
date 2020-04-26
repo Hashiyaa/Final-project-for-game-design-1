@@ -50,8 +50,8 @@ let minMoveE = 100;
 let mainWeaponsP = [];
 let shellP = {
     type: 'm',
-    damage: 10,
-    fireRate: 15, // the smaller, the faster
+    damage: 20,
+    fireRate: 50, // the smaller, the faster
     projSpeed: 7,
     projImg: shellImgP
 };
@@ -59,8 +59,8 @@ mainWeaponsP.push(shellP);
 // armor-piercing shells
 let apShell = {
     type: 'm',
-    damage: 20,
-    fireRate: 30,
+    damage: 50,
+    fireRate: 80,
     projSpeed: 7,
     projImg: apShellImgP
 };
@@ -70,7 +70,7 @@ mainWeaponsP.push(apShell);
 let heShell = {
     type: 'm',
     damage: 40,
-    fireRate: 50,
+    fireRate: 120,
     projSpeed: 7,
     projImg: heShellImgP
 };
@@ -80,7 +80,7 @@ let secondaryWeaponsP = [];
 // machine gun
 let machineGunP = {
     type: 's',
-    damage: 5,
+    damage: 1,
     fireRate: 5,
     projSpeed: 10,
     projImg: mgBulletImgP
@@ -90,8 +90,8 @@ secondaryWeaponsP.push(machineGunP);
 let mainWeaponsE = [];
 let shellE = {
     type: 'm',
-    damage: 10,
-    fireRate: 15,
+    damage: 20,
+    fireRate: 50,
     projSpeed: 7,
     projImg: shellImgE
 };
@@ -100,7 +100,7 @@ mainWeaponsE.push(shellE);
 let secondaryWeaponsE = [];
 let machineGunE = {
     type: 's',
-    damage: 5,
+    damage: 1,
     fireRate: 5,
     projSpeed: 10,
     projImg: shellImgE
@@ -143,24 +143,30 @@ window.onkeydown = function (event) {
 
     }
 
-    // right arrow
-    if (key === 39) {
-        tankP.clockwise = 1;
+    if (tankP.forward == 0) {
+        // right arrow
+        if (key === 39) {
+            tankP.clockwise = 1;
+        }
+        // left arrow
+        if (key === 37) {
+            tankP.clockwise = -1;
+        }
     }
-    // left arrow
-    else if (key === 37) {
-        tankP.clockwise = -1;
+    
+    if (tankP.clockwise == 0) {
+        // top arrow 
+        if (key === 38) {
+            tankP.forward = 1;
+        }
+        // down arrow
+        if (key === 40) {
+            tankP.forward = -1;
+        }
     }
-    // top arrow 
-    else if (key === 38) {
-        tankP.forward = 1;
-    }
-    // down arrow
-    else if (key === 40) {
-        tankP.forward = -1;
-    }
+
     // delete or backspace, for debug use
-    else if (key === 8) {
+    if (key === 8) {
         tankP.hp = 0;
     }
 };
@@ -179,16 +185,10 @@ function drawTank(tank) {
     context.rotate(tank.orient / 180 * Math.PI);
     context.translate(0, -tankOffset);
     context.drawImage(tank.img, -tank.img.width * 0.5, -tank.img.height * 0.5);
-
+    // hp bar
     context.translate(-0.5 * hpBarWidth, 0.5 * tank.img.height + 10);
     context.fillStyle = "white";
-    context.beginPath();
-    context.moveTo(0, 0);
-    context.lineTo(hpBarWidth, 0);
-    context.lineTo(hpBarWidth, hpBarHeight);
-    context.lineTo(0, hpBarHeight);
-    context.closePath();
-    context.fill();
+    context.fillRect(0, 0, hpBarWidth, hpBarHeight);
     let hpRatio = tank.hp / tank.hpMax;
     if (hpRatio > 0.5) {
         context.fillStyle = "blue";
@@ -198,7 +198,17 @@ function drawTank(tank) {
         context.fillStyle = "red";
     }
     context.fillRect(0, 0, hpRatio * hpBarWidth, hpBarHeight);
-    context.stroke();
+    context.strokeRect(0, 0, hpBarWidth, hpBarHeight);
+    // energy bar
+    if (tank.id.charAt(0) == 'p') {
+        context.translate(0, hpBarHeight);
+        context.fillStyle = "white";
+        context.fillRect(0, 0, hpBarWidth, hpBarHeight);
+        let fireRatio = Math.min(tank.fireTimer / tank.curWeapon.fireRate, 1);
+        context.fillStyle = "green";
+        context.fillRect(0, 0, fireRatio * hpBarWidth, hpBarHeight);
+        context.strokeRect(0, 0, hpBarWidth, hpBarHeight);
+    }
     context.restore();
 
     drawProjectiles(tank);
@@ -368,7 +378,7 @@ function getPolygon(tank, mode) {
 // let scoreMsgTimer = 0;
 // let scoreMsgRate = 50;
 
-function detectCollision() {
+function detectTankCollision() {
     let tanks = enemies.concat([tankP]);
     for (let i = 0; i < tanks.length; i++) {
         let tank = tanks[i];
@@ -523,7 +533,7 @@ function loadGameScene() {
         context.clearRect(0, 0, canvas.width, canvas.height);
         context.save();
 
-        detectCollision();
+        detectTankCollision();
         ////////// tank section //////////
         enemies.forEach(tankE => {
             if (tankE.hp > 0) {
