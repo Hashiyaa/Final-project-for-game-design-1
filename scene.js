@@ -16,6 +16,8 @@ let heShellImgP = new Image();
 heShellImgP.src = 'images/heShell_player.png';
 let mgBulletImgP = new Image();
 mgBulletImgP.src = 'images/mgBullet_player.png';
+let mapImg = new Image();
+mapImg.src = 'images/map.png';
 
 let tankEImg = new Image();
 tankEImg.src = 'images/tank_enemy.png';
@@ -23,13 +25,15 @@ let shellImgE = new Image();
 shellImgE.src = 'images/shell_enemy.png';
 
 // game settings
+let myWorld = {minX: 0, maxX: 1800, minY: 0, maxY: 1800};
+let player;
 let isOver = false;
 let isWinning = false;
 // set bounds
-let leftBound = 0.5 * tankPImg.width;
-let rightBound = canvas.width - 0.5 * tankPImg.width;
-let upperBound = 0.5 * tankPImg.width;
-let lowerBound = canvas.height - 0.5 * tankPImg.width;
+let leftBound = myWorld.minX + 0.5 * tankPImg.width;
+let rightBound = myWorld.maxX - 0.5 * tankPImg.width;
+let upperBound = myWorld.minY + 0.5 * tankPImg.height;
+let lowerBound = myWorld.maxY - 0.5 * tankPImg.height;
 
 // UI settings
 let score = 0;
@@ -212,14 +216,14 @@ function drawTank(tank) {
     context.restore();
 
     drawProjectiles(tank);
-    // drawRefDot(tank.posX, tank.posY);
+    drawRefDot(tank.posX, tank.posY);
 }
 
 function drawProjectiles(tank) {
     for (let i = 0; i < tank.projectiles.length; i++) {
         let proj = tank.projectiles[i];
         context.save();
-        if (proj.x >= 0 && proj.x <= canvas.width && proj.y >= 0 && proj.y <= canvas.height) {
+        if (proj.x >= myWorld.minX && proj.x <= myWorld.maxX && proj.y >= myWorld.minY && proj.y <= myWorld.maxY) {
             // update the position
             let dirX = Math.sin(proj.a / 180 * Math.PI);
             let dirY = -Math.cos(proj.a / 180 * Math.PI);
@@ -427,6 +431,12 @@ function detectHit(tank, enemies) {
     }
 }
 
+function clamp(value, min, max){
+    if (value < min) return min;
+    else if (value > max) return max;
+    return value;
+}
+
 function removeUI() {
     // remove UI elements
     let UIs = document.getElementsByClassName('UI');
@@ -476,8 +486,8 @@ function loadGameScene() {
     // reset the position of player's tank
     tankP = {
         id: "p0",
-        posX: 450,
-        posY: 300,
+        posX: 900,
+        posY: 900,
         orient: 0,
         obstacle: 0,
         forward: 0,
@@ -533,6 +543,17 @@ function loadGameScene() {
         context.clearRect(0, 0, canvas.width, canvas.height);
         context.save();
 
+        player = {x: tankP.posX, y: tankP.posY};
+
+        // console.log("PosX: " + player.x + ", PosY: " + player.y);
+
+        let camX = clamp(player.x - canvas.width / 2, myWorld.minX, myWorld.maxX - canvas.width);
+        let camY = clamp(player.y - canvas.height / 2, myWorld.minY, myWorld.maxY - canvas.height);
+        // console.log("CamX: " + camX + ", CamY: " + camY);
+        context.translate(-camX, -camY);
+
+        context.drawImage(mapImg, 0, 0);
+
         detectTankCollision();
         ////////// tank section //////////
         enemies.forEach(tankE => {
@@ -576,6 +597,7 @@ function loadGameScene() {
         context.save();
         context.fillStyle = "black";
         context.font = "16px Georgia";
+        context.translate(camX, camY);
         context.fillText("Score: " + score, 60, 40);
         context.fillText("Highest score: " + hScore, 180, 40);
         // context.fillText("Energy remaining: " + hp, 110, 70);
