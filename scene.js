@@ -1,4 +1,8 @@
 // @ts-check
+import {
+    TankE,
+    TankP
+} from "./tank.js";
 
 // get the main div and canvas ready
 let div = document.getElementById("main");
@@ -25,30 +29,48 @@ let shellImgE = new Image();
 shellImgE.src = 'images/shell_enemy.png';
 
 // game settings
-let myWorld = {minX: 0, maxX: 1800, minY: 0, maxY: 1800, mapRadius: 850};
-let myCamera;
-let isOver = false;
-let isWinning = false;
-// set bounds
-let leftBound = myWorld.minX + 0.5 * tankPImg.width;
-let rightBound = myWorld.maxX - 0.5 * tankPImg.width;
-let upperBound = myWorld.minY + 0.5 * tankPImg.height;
-let lowerBound = myWorld.maxY - 0.5 * tankPImg.height;
-
-// UI settings
-let score = 0;
-let hScore = 0;
-let hpBarWidth = 60;
-let hpBarHeight = 10;
-let buttonW = 250;
-let buttonH = 100;
-
-// tank gloal vars
-let hpMaxP = 200;
-let hpMaxE = 50;
-let tankOffset = 15;
-let projSpeed = 7;
-let minMoveE = 100;
+let myWorld = {
+    minX: 0,
+    maxX: 1800,
+    minY: 0,
+    maxY: 1800,
+    mapRadius: 850
+};
+let obsX1 = 800;
+let obsY1 = 570;
+let obsX2 = 840;
+let obsY2 = 660;
+let obs3 = 660;
+let obstacles = [
+    [
+        [obsX1, obsY1],
+        [obsX2, obsY2],
+        [obsY2, obsX2],
+        [obsY1, obsX1],
+        [obs3, obs3]
+    ],
+    [
+        [myWorld.maxX - obsX1, obsY1],
+        [myWorld.maxX - obsX2, obsY2],
+        [myWorld.maxX - obsY2, obsX2],
+        [myWorld.maxX - obsY1, obsX1],
+        [myWorld.maxX - obs3, obs3]
+    ],
+    [
+        [obsX1, myWorld.maxY - obsY1],
+        [obsX2, myWorld.maxY - obsY2],
+        [obsY2, myWorld.maxY - obsX2],
+        [obsY1, myWorld.maxY - obsX1],
+        [obs3, myWorld.maxY - obs3]
+    ],
+    [
+        [myWorld.maxX - obsX1, myWorld.maxY - obsY1],
+        [myWorld.maxX - obsX2, myWorld.maxY - obsY2],
+        [myWorld.maxX - obsY2, myWorld.maxY - obsX2],
+        [myWorld.maxX - obsY1, myWorld.maxY - obsX1],
+        [myWorld.maxX - obs3, myWorld.maxY - obs3]
+    ]
+];
 
 // stats for weapons
 let mainWeaponsP = [];
@@ -69,7 +91,6 @@ let apShell = {
     projImg: apShellImgP
 };
 mainWeaponsP.push(apShell);
-
 // High-explosive bombs
 let heShell = {
     type: 'm',
@@ -101,24 +122,56 @@ let shellE = {
 };
 mainWeaponsE.push(shellE);
 
-let secondaryWeaponsE = [];
-let machineGunE = {
-    type: 's',
-    damage: 1,
-    fireRate: 5,
-    projSpeed: 10,
-    projImg: shellImgE
+export {
+    myWorld,
+    obstacles,
+    mainWeaponsP,
+    secondaryWeaponsP,
+    mainWeaponsE
 };
-secondaryWeaponsE.push(machineGunE);
+
+let myCamera;
+let isOver = false;
+let isWinning = false;
+// UI settings
+let score = 0;
+let hScore = 0;
+let hpBarWidth = 60;
+let hpBarHeight = 10;
+let buttonW = 250;
+let buttonH = 100;
+
+// tank gloal vars
+let hpMaxP = 2000;
+let hpMaxE = 50;
+let tankOffset = 15;
+let projSpeed = 7;
 
 // initial params of player's tank
 let tankP;
 
 // enemy parameters
 let enemies = [];
-let spawnOffset = 250;
-let enemySpawns = [{x: spawnOffset, y: spawnOffset, o: 135}, {x: myWorld.maxX - spawnOffset, y: spawnOffset, o: 225}, 
-    {x: myWorld.maxX - spawnOffset, y: myWorld.maxY - spawnOffset, o: 315}, {x: spawnOffset, y: myWorld.maxY - spawnOffset, o: 45}];
+let spawnOffset = 500;
+let enemySpawns = [{
+        x: spawnOffset,
+        y: spawnOffset,
+        o: 135
+    }, {
+        x: myWorld.maxX - spawnOffset,
+        y: spawnOffset,
+        o: 225
+    },
+    {
+        x: myWorld.maxX - spawnOffset,
+        y: myWorld.maxY - spawnOffset,
+        o: 315
+    }, {
+        x: spawnOffset,
+        y: myWorld.maxY - spawnOffset,
+        o: 45
+    }
+];
 let enemyNum = 4;
 
 // event listeners for keyboard
@@ -129,7 +182,7 @@ window.onkeydown = function (event) {
     // space
     if (key === 32) {
         if (tankP.fireTimer >= tankP.curWeapon.fireRate) {
-            fire(tankP);
+            tankP.fire();
             tankP.fireTimer = 0;
         }
     }
@@ -159,7 +212,7 @@ window.onkeydown = function (event) {
             tankP.clockwise = -1;
         }
     }
-    
+
     if (tankP.clockwise == 0) {
         // top arrow 
         if (key === 38) {
@@ -206,15 +259,13 @@ function drawTank(tank) {
     context.fillRect(0, 0, hpRatio * hpBarWidth, hpBarHeight);
     context.strokeRect(0, 0, hpBarWidth, hpBarHeight);
     // energy bar
-    if (tank.id.charAt(0) == 'p') {
-        context.translate(0, hpBarHeight);
-        context.fillStyle = "white";
-        context.fillRect(0, 0, hpBarWidth, hpBarHeight);
-        let fireRatio = Math.min(tank.fireTimer / tank.curWeapon.fireRate, 1);
-        context.fillStyle = "green";
-        context.fillRect(0, 0, fireRatio * hpBarWidth, hpBarHeight);
-        context.strokeRect(0, 0, hpBarWidth, hpBarHeight);
-    }
+    context.translate(0, hpBarHeight);
+    context.fillStyle = "white";
+    context.fillRect(0, 0, hpBarWidth, hpBarHeight);
+    let fireRatio = Math.min(tank.fireTimer / tank.curWeapon.fireRate, 1);
+    context.fillStyle = "green";
+    context.fillRect(0, 0, fireRatio * hpBarWidth, hpBarHeight);
+    context.strokeRect(0, 0, hpBarWidth, hpBarHeight);
     context.restore();
 
     drawProjectiles(tank);
@@ -251,198 +302,16 @@ function drawRefDot(posX, posY) {
     context.restore();
 }
 
-function switchWeapon(tank) {
-    let mainWeapons = tank.id.charAt[0] = 'p' ? mainWeaponsP : mainWeaponsE;
-    let secondaryWeapons = tank.id.charAt[0] = 'p' ? secondaryWeaponsP : secondaryWeaponsE;
-    if (tank.weaponType == 'm') {
-        tank.curWeapon = mainWeapons[tank.mWeapon];
-    } else {
-        tank.curWeapon = secondaryWeapons[tank.sWeapon];
+function drawRefPolygon(polygon) {
+    context.save();
+    context.beginPath();
+    context.moveTo(polygon[0][0], polygon[0][1]);
+    for (let i = 1; i < polygon.length; i++) {
+        context.lineTo(polygon[i][0], polygon[i][1]);
     }
-}
-
-function move(tank) {
-    if (tank.obstacle * tank.forward > 0) {
-        // console.log("Stuck!");
-        return;
-    }
-    // update the orientation
-    tank.orient += tank.clockwise * tank.speedR;
-    // update the position
-    let dirX = Math.sin(tank.orient / 180 * Math.PI);
-    let dirY = -Math.cos(tank.orient / 180 * Math.PI);
-
-    // maybe hard code
-    let disX =  myWorld.maxX / 2 - tank.posX;
-    let disY = myWorld.maxY / 2 - tank.posY - tankOffset;
-    let dis = Math.sqrt(Math.pow(disX, 2) + Math.pow(disY, 2));
-    // if (((tank.posX >= leftBound && dirX * tank.forward <= 0) || (tank.posX <= rightBound && dirX * tank.forward >= 0)) &&
-    //    ((tank.posY >= upperBound && dirY * tank.forward <= 0) || (tank.posY <= lowerBound && dirY * tank.forward >= 0))) {
-     
-    if (dis < myWorld.mapRadius - tank.img.width / 2 || (dirX * disX + dirY * disY) * tank.forward > 0 ) {
-        tank.posX += dirX * tank.forward * tank.speedM;
-        tank.posY += dirY * tank.forward * tank.speedM;
-    } else {
-        if (tank.id.charAt(0) == 'e') {
-            if (tank.posX < leftBound || tank.posX > rightBound) {
-                tank.orient = 0 - tank.orient;
-            }
-            if (tank.posY < upperBound || tank.posY > lowerBound) {
-                tank.orient = 180 - tank.orient;
-            }
-        }
-    }
-}
-
-function searchForPlayer(tank, tankP) {
-    let vec1 = [Math.sin(tank.orient / 180 * Math.PI), -Math.cos(tank.orient / 180 * Math.PI)];
-    let vec2 = [tankP.posX - tank.posX, tankP.posY - tank.posY];
-    let vec1Mag = Math.sqrt(vec1[0] * vec1[0] + vec1[1] * vec1[1]);
-    let vec2Mag = Math.sqrt(vec2[0] * vec2[0] + vec2[1] * vec2[1]);
-    let angle = Math.acos((vec1[0] * vec2[0] + vec1[1] * vec2[1]) / (vec1Mag * vec2Mag)) / Math.PI * 180;
-    let dir = vec1[0] * vec2[1] - vec1[1] * vec2[0];
-    dir /= Math.abs(dir); // positive -> right, negative -> left
-    // console.log(dir);
-    // console.log("Orientation: " + tank.orient + ", Angle: " + angle);
-    if (Math.abs(angle) < 1) {
-        // console.log("Fire!");
-        tank.forward = 0;
-        tank.clockwise = 0;
-        if (tank.fireTimer >= tank.curWeapon.fireRate) {
-            fire(tank);
-            tank.fireTimer = 0;
-        }
-    } else if (Math.abs(angle) < tank.view * 0.5) {
-        // console.log("Detected!");
-        tank.forward = 0;
-        tank.clockwise = dir;
-    } else {
-        tank.clockwise = 0;
-        tank.forward = 1;
-    }
-}
-
-function fire(tank) {
-    let offsetX = Math.sin(tank.orient / 180 * Math.PI) * (tank.img.height * 0.5 + tankOffset);
-    let offsetY = -Math.cos(tank.orient / 180 * Math.PI) * (tank.img.height * 0.5 + tankOffset);
-    let proj = {
-        x: tank.posX + offsetX,
-        y: tank.posY + offsetY + tankOffset,
-        a: tank.orient,
-        img: tank.curWeapon.projImg
-    };
-    tank.projectiles.push(proj);
-}
-
-function inside(x, y, vs) {
-    // ray-casting algorithm based on
-    // http://www.ecse.rpi.edu/Homepages/wrf/Research/Short_Notes/pnpoly.html
-    let inside = false;
-    for (let i = 0, j = vs.length - 1; i < vs.length; j = i++) {
-        let xi = vs[i][0],
-            yi = vs[i][1];
-        let xj = vs[j][0],
-            yj = vs[j][1];
-
-        let intersect = ((yi > y) != (yj > y)) && (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
-        if (intersect) inside = !inside;
-    }
-    return inside;
-}
-
-function getPolygon(tank, mode) {
-    let center = [tank.posX, tank.posY + tankOffset];
-    let diagonalHalf = Math.sqrt(Math.pow(tank.img.width * 0.5, 2) + Math.pow(tank.img.height * 0.5 - tankOffset, 2));
-    // collision mode
-    if (mode == 'c') {
-        // center = [tank.posX, tank.posY];
-        diagonalHalf = Math.sqrt(Math.pow(tank.img.width * 0.5, 2) + Math.pow(tank.img.height * 0.5, 2));
-    }
-    let a1 = Math.acos(tank.img.width * 0.5 / diagonalHalf) / Math.PI * 180;
-    let pointtl = [-diagonalHalf * Math.cos((a1 + tank.orient) * Math.PI / 180),
-        -diagonalHalf * Math.sin((a1 + tank.orient) * Math.PI / 180)
-    ];
-    let pointtr = [diagonalHalf * Math.cos((a1 - tank.orient) * Math.PI / 180),
-        -diagonalHalf * Math.sin((a1 - tank.orient) * Math.PI / 180)
-    ];
-    let pointbr = [-pointtl[0], -pointtl[1]];
-    let pointbl = [-pointtr[0], -pointtr[1]];
-    let polygon = [pointtl, pointtr, pointbr, pointbl];
-    for (let k = 0; k < polygon.length; k++) {
-        let point = polygon[k];
-        point[0] += center[0];
-        point[1] += center[1];
-        if (mode == 'c') {
-            point[0] += tankOffset * Math.sin(tank.orient * Math.PI / 180);
-            point[1] += -tankOffset * Math.cos(tank.orient * Math.PI / 180);
-        }
-        // drawRefDot(point[0], point[1]);
-    }
-    return polygon;
-}
-
-// handle skull showing up
-// let skull;
-// let skullTimer = 0;
-// let skullRate = 50;
-// handle prompt message
-// let scoreMsg;
-// let scoreMsgTimer = 0;
-// let scoreMsgRate = 50;
-
-function detectTankCollision() {
-    let tanks = enemies.concat([tankP]);
-    for (let i = 0; i < tanks.length; i++) {
-        let tank = tanks[i];
-        // zone of detection
-        let polygon = getPolygon(tank, 'c');
-        // console.log(polygon);
-        search: for (let j = 0; j < tanks.length; j++) {
-            if (i == j) continue;
-            let tankB = tanks[j];
-            let polygonB = getPolygon(tankB, 'c');
-            for (let k = 0; k < polygon.length; k++) {
-                let point = polygon[k];
-                if (inside(point[0], point[1], polygonB)) {
-                    //console.log("Collide!");
-                    if (k < 2) {
-                        tank.obstacle = 1;
-                    } else {
-                        tank.obstacle = -1;
-                    }
-                    break search;
-                }
-                tank.obstacle = 0;
-            }
-        }
-    }
-}
-
-function detectHit(tank, enemies) {
-    for (let i = 0; i < tank.projectiles.length; i++) {
-        let proj = tank.projectiles[i];
-        // zone of detection
-        for (let j = 0; j < enemies.length; j++) {
-            let tankE = enemies[j];
-            let polygon = getPolygon(tankE, 'h');
-            // console.log(polygon);
-            if (inside(proj.x, proj.y, polygon)) {
-                // console.log("Hit!");
-                tank.projectiles.splice(i, 1);
-                i--;
-
-                if (tankE.hp > 0) {
-                    tankE.hp -= tank.curWeapon.damage;
-                }
-            }
-        }
-    }
-}
-
-function clamp(value, min, max){
-    if (value < min) return min;
-    else if (value > max) return max;
-    return value;
+    context.closePath();
+    context.stroke();
+    context.restore();
 }
 
 function removeUI() {
@@ -454,6 +323,8 @@ function removeUI() {
 
 function loadMenuScene() {
     removeUI();
+
+    context.clearRect(0, 0, canvas.width, canvas.height);
 
     let startMenu = document.createElement("div");
     startMenu.className = "menu UI";
@@ -471,14 +342,20 @@ function loadMenuScene() {
     // Temporary instructions
     let instructionText = document.createElement("p");
     instructionText.id = "instructionText";
-    instructionText.innerHTML = 
+    instructionText.innerHTML =
         "1. Use up and down arrow keys to move forward and backward;\n" +
-        "2. Use left and right arrow keys to turn anti-clockwise and clockwise;\n" + 
-        "3. Use 1 and 2 to switch between the main and secondary weapon;\n" + 
+        "2. Use left and right arrow keys to turn anti-clockwise and clockwise;\n" +
+        "3. Use 1 and 2 to switch between the main and secondary weapon;\n" +
         "4. Use space to shoot!";
     startMenu.appendChild(instructionText);
 
     div.appendChild(startMenu);
+}
+
+function clamp(value, min, max) {
+    if (value < min) return min;
+    else if (value > max) return max;
+    return value;
 }
 
 function loadGameScene() {
@@ -492,50 +369,10 @@ function loadGameScene() {
     enemies = [];
 
     // reset the position of player's tank
-    tankP = {
-        id: "p0",
-        posX: 900,
-        posY: 900,
-        orient: 0,
-        obstacle: 0,
-        forward: 0,
-        clockwise: 0,
-        speedM: 4,
-        speedR: 2,
-        hp: hpMaxP,
-        hpMax: hpMaxP,
-        mWeapon: 0,
-        sWeapon: 0,
-        weaponType: 'm',
-        curWeapon: shellP,
-        fireTimer: 0,
-        projectiles: [],
-        img: tankPImg
-    };
+    tankP = new TankP("p0", 900, 900, 0, 0, 0, 0, 4, 2, hpMaxP, hpMaxP, 0, 0, 'm', shellP, 0, [], tankPImg, tankOffset);
 
     for (let i = 0; i < enemyNum; i++) {
-        let enemy = {
-            id: "e" + i,
-            posX: enemySpawns[i % enemyNum].x,
-            posY: enemySpawns[i % enemyNum].y,
-            orient: enemySpawns[i % enemyNum].o,
-            obstacle: 0,
-            forward: 0,
-            clockwise: 0,
-            speedM: 2,
-            speedR: 0.5,
-            hp: hpMaxE,
-            hpMax: hpMaxE,
-            curMove: 0,
-            mWeapon: 0,
-            sWeapon: 0,
-            weaponType: 'm',
-            curWeapon: shellE,
-            view: 30,
-            fireTimer: 0,
-            projectiles: [],
-            img: tankEImg,
-        };
+        let enemy = new TankE("e" + i, enemySpawns[i % enemyNum].x, enemySpawns[i % enemyNum].y, enemySpawns[i % enemyNum].o, 0, 0, 0, 2, 0.5, hpMaxE, hpMaxE, 30, 0, 0, 'm', shellE, 0, [], tankEImg, tankOffset);
         enemies.push(enemy);
     }
 
@@ -548,21 +385,23 @@ function loadGameScene() {
         context.clearRect(0, 0, canvas.width, canvas.height);
         context.save();
 
-        myCamera = {x: clamp(tankP.posX - canvas.width / 2, myWorld.minX, myWorld.maxX - canvas.width),
-            y: clamp(tankP.posY - canvas.height / 2, myWorld.minY, myWorld.maxY - canvas.height)};
+        myCamera = {
+            x: clamp(tankP.posX - canvas.width / 2, myWorld.minX, myWorld.maxX - canvas.width),
+            y: clamp(tankP.posY - canvas.height / 2, myWorld.minY, myWorld.maxY - canvas.height)
+        };
         // console.log("CamX: " + camX + ", CamY: " + camY);
         context.translate(-myCamera.x, -myCamera.y);
 
         context.drawImage(mapImg, 0, 0);
 
-        detectTankCollision();
+        tankP.detectCollision(enemies);
         ////////// tank section //////////
         enemies.forEach(tankE => {
             if (tankE.hp > 0) {
                 drawTank(tankE);
-                move(tankE);
-                searchForPlayer(tankE, tankP);
-                detectHit(tankE, [tankP]);
+                tankE.move();
+                tankE.searchForPlayer(tankP);
+                tankE.detectHit([tankP]);
                 tankE.fireTimer++;
             } else {
                 let i = enemies.indexOf(tankE);
@@ -572,9 +411,9 @@ function loadGameScene() {
         });
 
         drawTank(tankP);
-        switchWeapon(tankP);
-        move(tankP);
-        detectHit(tankP, enemies);
+        tankP.switchWeapon();
+        tankP.move();
+        tankP.detectHit(enemies);
         tankP.fireTimer++;
 
         // draw the skull if hit

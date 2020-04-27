@@ -1,0 +1,256 @@
+import {
+    myWorld,
+    obstacles,
+    mainWeaponsP,
+    secondaryWeaponsP,
+    mainWeaponsE
+} from "./scene.js";
+
+function inside(x, y, vs) {
+    // ray-casting algorithm based on
+    // http://www.ecse.rpi.edu/Homepages/wrf/Research/Short_Notes/pnpoly.html
+    let inside = false;
+    for (let i = 0, j = vs.length - 1; i < vs.length; j = i++) {
+        let xi = vs[i][0],
+            yi = vs[i][1];
+        let xj = vs[j][0],
+            yj = vs[j][1];
+
+        let intersect = ((yi > y) != (yj > y)) && (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
+        if (intersect) inside = !inside;
+    }
+    return inside;
+}
+
+// @ts-check
+class Tank {
+
+    constructor(id, posX, posY, orient, obstacle, forward, clockwise, speedM, speedR, hp, hpMax, mWeapon, sWeapon, weaponType, curWeapon, fireTimer, projectiles, img, offset) {
+        this.id = id;
+        this.posX = posX;
+        this.posY = posY;
+        this.orient = orient;
+        this.obstacle = obstacle;
+        this.forward = forward;
+        this.clockwise = clockwise;
+        this.speedM = speedM;
+        this.speedR = speedR;
+        this.hp = hp;
+        this.hpMax = hpMax;
+        this.mWeapon = mWeapon;
+        this.sWeapon = sWeapon;
+        this.weaponType = weaponType;
+        this.curWeapon = curWeapon;
+        this.fireTimer = fireTimer;
+        this.projectiles = projectiles;
+        this.img = img;
+        this.offset = offset;
+    }
+
+    move() {
+        if (this.obstacle * this.forward > 0) {
+            // console.log("Stuck!");
+            return;
+        }
+        // update the orientation
+        this.orient += this.clockwise * this.speedR;
+        // update the position
+        let dirX = Math.sin(this.orient / 180 * Math.PI);
+        let dirY = -Math.cos(this.orient / 180 * Math.PI);
+
+        // maybe hard code
+        let disX = myWorld.maxX / 2 - this.posX;
+        let disY = myWorld.maxY / 2 - this.posY - this.offset;
+        let dis = Math.sqrt(Math.pow(disX, 2) + Math.pow(disY, 2));
+        // if (((tank.posX >= leftBound && dirX * tank.forward <= 0) || (tank.posX <= rightBound && dirX * tank.forward >= 0)) &&
+        //    ((tank.posY >= upperBound && dirY * tank.forward <= 0) || (tank.posY <= lowerBound && dirY * tank.forward >= 0))) {
+
+        if (dis < myWorld.mapRadius - this.img.width / 2 || (dirX * disX + dirY * disY) * this.forward > 0) {
+            this.posX += dirX * this.forward * this.speedM;
+            this.posY += dirY * this.forward * this.speedM;
+        } else {
+            if (this.id.charAt(0) == 'e') {
+                // this.orient = 0 - this.orient;
+            }
+        }
+    }
+
+    fire() {
+        let offsetX = Math.sin(this.orient / 180 * Math.PI) * (this.img.height * 0.5 + this.offset);
+        let offsetY = -Math.cos(this.orient / 180 * Math.PI) * (this.img.height * 0.5 + this.offset);
+        let proj = {
+            x: this.posX + offsetX,
+            y: this.posY + offsetY + this.offset,
+            a: this.orient,
+            img: this.curWeapon.projImg
+        };
+        this.projectiles.push(proj);
+    }
+
+    switchWeapon() {
+        let mainWeapons = this.id.charAt[0] = 'p' ? mainWeaponsP : mainWeaponsE;
+        let secondaryWeapons = this.id.charAt[0] = 'p' ? secondaryWeaponsP : secondaryWeaponsE;
+        if (this.weaponType == 'm') {
+            this.curWeapon = mainWeapons[this.mWeapon];
+        } else {
+            this.curWeapon = secondaryWeapons[this.sWeapon];
+        }
+    }
+
+    getPolygon(mode) {
+        let center = [this.posX, this.posY + this.offset];
+        let diagonalHalf = Math.sqrt(Math.pow(this.img.width * 0.5, 2) + Math.pow(this.img.height * 0.5 - this.offset, 2));
+        // collision mode
+        if (mode == 'c') {
+            // center = [tank.posX, tank.posY];
+            diagonalHalf = Math.sqrt(Math.pow(this.img.width * 0.5, 2) + Math.pow(this.img.height * 0.5, 2));
+        }
+        let a1 = Math.acos(this.img.width * 0.5 / diagonalHalf) / Math.PI * 180;
+        let pointtl = [-diagonalHalf * Math.cos((a1 + this.orient) * Math.PI / 180),
+            -diagonalHalf * Math.sin((a1 + this.orient) * Math.PI / 180)
+        ];
+        let pointtr = [diagonalHalf * Math.cos((a1 - this.orient) * Math.PI / 180),
+            -diagonalHalf * Math.sin((a1 - this.orient) * Math.PI / 180)
+        ];
+        let pointbr = [-pointtl[0], -pointtl[1]];
+        let pointbl = [-pointtr[0], -pointtr[1]];
+        let polygon = [pointtl, pointtr, pointbr, pointbl];
+        for (let k = 0; k < polygon.length; k++) {
+            let point = polygon[k];
+            point[0] += center[0];
+            point[1] += center[1];
+            if (mode == 'c') {
+                point[0] += this.offset * Math.sin(this.orient * Math.PI / 180);
+                point[1] += -this.offset * Math.cos(this.orient * Math.PI / 180);
+            }
+            // drawRefDot(point[0], point[1]);
+        }
+        return polygon;
+    }
+
+    // handle skull showing up
+    // let skull;
+    // let skullTimer = 0;
+    // let skullRate = 50;
+    // handle prompt message
+    // let scoreMsg;
+    // let scoreMsgTimer = 0;
+    // let scoreMsgRate = 50;
+
+    detectCollision(enemies) {
+        let tanks = enemies.concat([this]);
+        search: for (let i = 0; i < tanks.length; i++) {
+            let tank = tanks[i];
+            // zone of detection
+            let polygon = this.getPolygon('c');
+            // console.log(polygon);
+            for (let j = 0; j < tanks.length; j++) {
+                if (i == j) continue;
+                let tankB = tanks[j];
+                let polygonB = tankB.getPolygon('c');
+                for (let k = 0; k < polygon.length; k++) {
+                    let point = polygon[k];
+                    if (inside(point[0], point[1], polygonB)) {
+                        //console.log("Collide!");
+                        if (k < 2) {
+                            tank.obstacle = 1;
+                        } else {
+                            tank.obstacle = -1;
+                        }
+                        continue search;
+                    }
+                    tank.obstacle = 0;
+                }
+            }
+            for (let j = 0; j < obstacles.length; j++) {
+                let obs = obstacles[j];
+                // drawRefPolygon(obs);
+                for (let k = 0; k < polygon.length; k++) {
+                    let point = polygon[k];
+                    if (inside(point[0], point[1], obs)) {
+                        //console.log("Collide!");
+                        if (k < 2) {
+                            tank.obstacle = 1;
+                        } else {
+                            tank.obstacle = -1;
+                        }
+                        continue search;
+                    }
+                    tank.obstacle = 0;
+                }
+            }
+        }
+    }
+
+    detectHit(enemies) {
+        for (let i = 0; i < this.projectiles.length; i++) {
+            let proj = this.projectiles[i];
+            // zone of detection
+            for (let j = 0; j < enemies.length; j++) {
+                let tankE = enemies[j];
+                let polygon = tankE.getPolygon('h');
+                // console.log(polygon);
+                if (inside(proj.x, proj.y, polygon)) {
+                    // console.log("Hit!");
+                    this.projectiles.splice(i, 1);
+                    i--;
+
+                    if (tankE.hp > 0) {
+                        tankE.hp -= this.curWeapon.damage;
+                    }
+                }
+            }
+            for (let j = 0; j < obstacles.length; j++) {
+                let obs = obstacles[j];
+                // drawRefPolygon(obs);
+                if (inside(proj.x, proj.y, obs)) {
+                    //console.log("Hit Obs!");
+                    this.projectiles.splice(i, 1);
+                    i--;
+                }
+            }
+        }
+    }
+}
+
+export class TankP extends Tank {
+    constructor(id, posX, posY, orient, obstacle, forward, clockwise, speedM, speedR, hp, hpMax, mWeapon, sWeapon, weaponType, curWeapon, fireTimer, projectiles, img, offset) {
+        super(id, posX, posY, orient, obstacle, forward, clockwise, speedM, speedR, hp, hpMax, mWeapon, sWeapon, weaponType, curWeapon, fireTimer, projectiles, img, offset);
+    }
+
+}
+
+export class TankE extends Tank {
+    constructor(id, posX, posY, orient, obstacle, forward, clockwise, speedM, speedR, hp, hpMax, view, mWeapon, sWeapon, weaponType, curWeapon, fireTimer, projectiles, img, offset) {
+        super(id, posX, posY, orient, obstacle, forward, clockwise, speedM, speedR, hp, hpMax, mWeapon, sWeapon, weaponType, curWeapon, fireTimer, projectiles, img, offset);
+        this.view = view;
+    }
+
+    searchForPlayer(tankP) {
+        let vec1 = [Math.sin(this.orient / 180 * Math.PI), -Math.cos(this.orient / 180 * Math.PI)];
+        let vec2 = [tankP.posX - this.posX, tankP.posY - this.posY];
+        let vec1Mag = Math.sqrt(vec1[0] * vec1[0] + vec1[1] * vec1[1]);
+        let vec2Mag = Math.sqrt(vec2[0] * vec2[0] + vec2[1] * vec2[1]);
+        let angle = Math.acos((vec1[0] * vec2[0] + vec1[1] * vec2[1]) / (vec1Mag * vec2Mag)) / Math.PI * 180;
+        let dir = vec1[0] * vec2[1] - vec1[1] * vec2[0];
+        dir /= Math.abs(dir); // positive -> right, negative -> left
+        // console.log(dir);
+        // console.log("Orientation: " + tank.orient + ", Angle: " + angle);
+        if (Math.abs(angle) < 1) {
+            // console.log("Fire!");
+            this.forward = 0;
+            this.clockwise = 0;
+            if (this.fireTimer >= this.curWeapon.fireRate) {
+                this.fire();
+                this.fireTimer = 0;
+            }
+        } else if (Math.abs(angle) < this.view * 0.5) {
+            // console.log("Detected!");
+            this.forward = 0;
+            this.clockwise = dir;
+        } else {
+            this.clockwise = 0;
+            this.forward = 1;
+        }
+    }
+}
