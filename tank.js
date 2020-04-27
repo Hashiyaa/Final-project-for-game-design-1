@@ -48,7 +48,8 @@ class Tank {
     }
 
     move() {
-        if (this.obstacle * this.forward > 0) {
+        // 0 and 1 -> 1, 2 and 3 -> -1
+        if (this.obstacle != -1 && (1 - 2 * Math.floor(this.obstacle / 2)) * this.forward > 0) {
             // console.log("Stuck!");
             return;
         }
@@ -68,10 +69,7 @@ class Tank {
         if (dis < myWorld.mapRadius - this.img.width / 2 || (dirX * disX + dirY * disY) * this.forward > 0) {
             this.posX += dirX * this.forward * this.speedM;
             this.posY += dirY * this.forward * this.speedM;
-        } else {
-            if (this.id.charAt(0) == 'e') {
-                // this.orient = 0 - this.orient;
-            }
+            this.obstacle = -1;
         }
     }
 
@@ -82,6 +80,7 @@ class Tank {
             x: this.posX + offsetX,
             y: this.posY + offsetY + this.offset,
             a: this.orient,
+            speed: this.curWeapon.projSpeed,
             img: this.curWeapon.projImg
         };
         this.projectiles.push(proj);
@@ -138,46 +137,33 @@ class Tank {
     // let scoreMsgRate = 50;
 
     detectCollision(enemies) {
-        let tanks = enemies.concat([this]);
-        search: for (let i = 0; i < tanks.length; i++) {
-            let tank = tanks[i];
+        let polygon = this.getPolygon('c');
+        for (let i = 0; i < enemies.length; i++) {
+            let tank = enemies[i];
             // zone of detection
-            let polygon = this.getPolygon('c');
             // console.log(polygon);
-            for (let j = 0; j < tanks.length; j++) {
-                if (i == j) continue;
-                let tankB = tanks[j];
-                let polygonB = tankB.getPolygon('c');
-                for (let k = 0; k < polygon.length; k++) {
-                    let point = polygon[k];
-                    if (inside(point[0], point[1], polygonB)) {
-                        //console.log("Collide!");
-                        if (k < 2) {
-                            tank.obstacle = 1;
-                        } else {
-                            tank.obstacle = -1;
-                        }
-                        continue search;
-                    }
-                    tank.obstacle = 0;
+            let polygonB = tank.getPolygon('c');
+            for (let j = 0; j < polygon.length; j++) {
+                let point = polygon[j];
+                if (inside(point[0], point[1], polygonB)) {
+                    //console.log("Collide!");
+                    this.obstacle = j;
+                    return;
                 }
+                // this.obstacle = -1;
             }
-            for (let j = 0; j < obstacles.length; j++) {
-                let obs = obstacles[j];
-                // drawRefPolygon(obs);
-                for (let k = 0; k < polygon.length; k++) {
-                    let point = polygon[k];
-                    if (inside(point[0], point[1], obs)) {
-                        //console.log("Collide!");
-                        if (k < 2) {
-                            tank.obstacle = 1;
-                        } else {
-                            tank.obstacle = -1;
-                        }
-                        continue search;
-                    }
-                    tank.obstacle = 0;
+        }
+        for (let i = 0; i < obstacles.length; i++) {
+            let obs = obstacles[i];
+            // drawRefPolygon(obs);
+            for (let j = 0; j < polygon.length; j++) {
+                let point = polygon[j];
+                if (inside(point[0], point[1], obs)) {
+                    //console.log("Collide!");
+                    this.obstacle = j;
+                    return;
                 }
+                // this.obstacle = -1;
             }
         }
     }
@@ -221,9 +207,61 @@ export class TankP extends Tank {
 }
 
 export class TankE extends Tank {
-    constructor(id, posX, posY, orient, obstacle, forward, clockwise, speedM, speedR, hp, hpMax, view, mWeapon, sWeapon, weaponType, curWeapon, fireTimer, projectiles, img, offset) {
+    constructor(id, posX, posY, orient, obstacle, forward, clockwise, speedM, speedR, curR, hp, hpMax, view, mWeapon, sWeapon, weaponType, curWeapon, fireTimer, projectiles, img, offset) {
         super(id, posX, posY, orient, obstacle, forward, clockwise, speedM, speedR, hp, hpMax, mWeapon, sWeapon, weaponType, curWeapon, fireTimer, projectiles, img, offset);
+        this.curR = curR;
         this.view = view;
+    }
+
+    move() {
+        if (this.obstacle != -1 && (1 - 2 * Math.floor(this.obstacle / 2)) * this.forward > 0) {
+            this.forward = 0;
+            this.clockwise = 1 - 2 * this.obstacle;
+            if (this.curR < 0) this.curR = 0;
+        }
+
+        // update the orientation
+        this.orient += this.clockwise * this.speedR;
+        if (this.curR >= 0) {
+            if (this.curR <= 90) {
+                this.curR += Math.abs(this.clockwise * this.speedR);
+            } else {
+                this.obstacle = -1;
+                this.curR = -1;
+                this.forward = 1;
+                this.clockwise = 0;
+            }
+            console.log("Id: " + this.id + ", curR: ", this.curR);
+            return;
+        }
+
+        // update the position
+        let dirX = Math.sin(this.orient / 180 * Math.PI);
+        let dirY = -Math.cos(this.orient / 180 * Math.PI);
+
+        // maybe hard code
+        let disX = myWorld.maxX / 2 - this.posX;
+        let disY = myWorld.maxY / 2 - this.posY - this.offset;
+        let dis = Math.sqrt(Math.pow(disX, 2) + Math.pow(disY, 2));
+        // if (((tank.posX >= leftBound && dirX * tank.forward <= 0) || (tank.posX <= rightBound && dirX * tank.forward >= 0)) &&
+        //    ((tank.posY >= upperBound && dirY * tank.forward <= 0) || (tank.posY <= lowerBound && dirY * tank.forward >= 0))) {
+
+        if (dis < myWorld.mapRadius - this.img.width / 2 || (dirX * disX + dirY * disY) * this.forward > 0) {
+            this.posX += dirX * this.forward * this.speedM;
+            this.posY += dirY * this.forward * this.speedM;
+            this.obstacle = -1;
+        } else {
+            let polygon = this.getPolygon();
+            let maxDis = 0;
+            for (let i = 0; i < polygon.length; i++) {
+                let pointDis = Math.sqrt(Math.pow(myWorld.maxX / 2 - polygon[i][0], 2) + Math.pow(myWorld.maxY / 2 - polygon[i][1], 2));
+                if (pointDis > maxDis) {
+                    maxDis = pointDis;
+                    this.obstacle = i;
+                }
+            }
+            // console.log("Id: " + this.id + ", Obs: " + this.obstacle);
+        }
     }
 
     searchForPlayer(tankP) {
@@ -234,9 +272,30 @@ export class TankE extends Tank {
         let angle = Math.acos((vec1[0] * vec2[0] + vec1[1] * vec2[1]) / (vec1Mag * vec2Mag)) / Math.PI * 180;
         let dir = vec1[0] * vec2[1] - vec1[1] * vec2[0];
         dir /= Math.abs(dir); // positive -> right, negative -> left
-        // console.log(dir);
+
+        let obstacle;
+        let obstacleSide;
+        search: for (let i = 0; i < obstacles.length; i++) {
+            let obs = obstacles[i];
+            for (let j = 0; j < obs.length; j++) {
+                let vecSide = [obs[j][0] - this.posX, obs[j][1] - this.posY];
+                let curSide = vecSide[0] * vec2[1] - vecSide[1] * vec2[0];
+                if (j == 0) {
+                    obstacleSide = curSide;
+                } else {
+                    if (obstacleSide * curSide < 0) {
+                        obstacle = 1;
+                        break search;
+                    } else {
+                        obstacle = 0;
+                    }
+                }
+            }
+        }
+
+        // console.log("Id: " + this.id + ", Obs: " + obstacle);
         // console.log("Orientation: " + tank.orient + ", Angle: " + angle);
-        if (Math.abs(angle) < 1) {
+        if (Math.abs(angle) < 1 && !obstacle) {
             // console.log("Fire!");
             this.forward = 0;
             this.clockwise = 0;
@@ -244,12 +303,12 @@ export class TankE extends Tank {
                 this.fire();
                 this.fireTimer = 0;
             }
-        } else if (Math.abs(angle) < this.view * 0.5) {
+        } else if (Math.abs(angle) < this.view * 0.5 && !obstacle) {
             // console.log("Detected!");
             this.forward = 0;
             this.clockwise = dir;
         } else {
-            this.clockwise = 0;
+            // this.clockwise = 0;
             this.forward = 1;
         }
     }

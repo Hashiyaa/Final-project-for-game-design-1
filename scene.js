@@ -152,24 +152,31 @@ let tankP;
 
 // enemy parameters
 let enemies = [];
-let spawnOffset = 500;
+let spawnOffset = 400;
 let enemySpawns = [{
         x: spawnOffset,
         y: spawnOffset,
-        o: 135
+    }, {
+        x: spawnOffset * 2,
+        y: spawnOffset / 2,
     }, {
         x: myWorld.maxX - spawnOffset,
         y: spawnOffset,
-        o: 225
-    },
-    {
+    }, {
+        x: myWorld.maxX - spawnOffset / 2,
+        y: spawnOffset * 2,
+    }, {
         x: myWorld.maxX - spawnOffset,
         y: myWorld.maxY - spawnOffset,
-        o: 315
+    }, {
+        x: spawnOffset * 2,
+        y: myWorld.maxY - spawnOffset / 2,
     }, {
         x: spawnOffset,
         y: myWorld.maxY - spawnOffset,
-        o: 45
+    }, {
+        x: spawnOffset / 2,
+        y: spawnOffset * 2,
     }
 ];
 let enemyNum = 4;
@@ -280,8 +287,8 @@ function drawProjectiles(tank) {
             // update the position
             let dirX = Math.sin(proj.a / 180 * Math.PI);
             let dirY = -Math.cos(proj.a / 180 * Math.PI);
-            proj.x += dirX * projSpeed;
-            proj.y += dirY * projSpeed;
+            proj.x += dirX * proj.speed;
+            proj.y += dirY * proj.speed;
             context.translate(proj.x, proj.y);
             context.rotate(proj.a / 180 * Math.PI);
             context.drawImage(proj.img, -proj.img.width * 0.5, -proj.img.height * 0.5);
@@ -372,8 +379,11 @@ function loadGameScene() {
     tankP = new TankP("p0", 900, 900, 0, 0, 0, 0, 4, 2, hpMaxP, hpMaxP, 0, 0, 'm', shellP, 0, [], tankPImg, tankOffset);
 
     for (let i = 0; i < enemyNum; i++) {
-        let enemy = new TankE("e" + i, enemySpawns[i % enemyNum].x, enemySpawns[i % enemyNum].y, enemySpawns[i % enemyNum].o, 0, 0, 0, 2, 0.5, hpMaxE, hpMaxE, 30, 0, 0, 'm', shellE, 0, [], tankEImg, tankOffset);
+        let randPos = Math.floor(Math.random() * enemySpawns.length);
+        let randO = (i % enemyNum) * 90 + 45 + 45 * Math.random();
+        let enemy = new TankE("e" + i, enemySpawns[randPos].x, enemySpawns[randPos].y, randO, 0, 0, 0, 2, 1, -1, hpMaxE, hpMaxE, 30, 0, 0, 'm', shellE, 0, [], tankEImg, tankOffset);
         enemies.push(enemy);
+        enemySpawns.splice(randPos, 1);
     }
 
     let clock = 0;
@@ -394,13 +404,14 @@ function loadGameScene() {
 
         context.drawImage(mapImg, 0, 0);
 
-        tankP.detectCollision(enemies);
+        
         ////////// tank section //////////
         enemies.forEach(tankE => {
             if (tankE.hp > 0) {
                 drawTank(tankE);
                 tankE.move();
                 tankE.searchForPlayer(tankP);
+                tankE.detectCollision(tankP);
                 tankE.detectHit([tankP]);
                 tankE.fireTimer++;
             } else {
@@ -413,6 +424,7 @@ function loadGameScene() {
         drawTank(tankP);
         tankP.switchWeapon();
         tankP.move();
+        tankP.detectCollision(enemies);
         tankP.detectHit(enemies);
         tankP.fireTimer++;
 
