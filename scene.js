@@ -25,8 +25,8 @@ let shellImgE = new Image();
 shellImgE.src = 'images/shell_enemy.png';
 
 // game settings
-let myWorld = {minX: 0, maxX: 1800, minY: 0, maxY: 1800};
-let player;
+let myWorld = {minX: 0, maxX: 1800, minY: 0, maxY: 1800, mapRadius: 850};
+let myCamera;
 let isOver = false;
 let isWinning = false;
 // set bounds
@@ -116,8 +116,10 @@ let tankP;
 
 // enemy parameters
 let enemies = [];
-let enemySpawns = [];
-let enemyNum = 2;
+let spawnOffset = 250;
+let enemySpawns = [{x: spawnOffset, y: spawnOffset, o: 135}, {x: myWorld.maxX - spawnOffset, y: spawnOffset, o: 225}, 
+    {x: myWorld.maxX - spawnOffset, y: myWorld.maxY - spawnOffset, o: 315}, {x: spawnOffset, y: myWorld.maxY - spawnOffset, o: 45}];
+let enemyNum = 4;
 
 // event listeners for keyboard
 window.onkeydown = function (event) {
@@ -270,8 +272,14 @@ function move(tank) {
     let dirX = Math.sin(tank.orient / 180 * Math.PI);
     let dirY = -Math.cos(tank.orient / 180 * Math.PI);
 
-    if (((tank.posX >= leftBound && dirX * tank.forward <= 0) || (tank.posX <= rightBound && dirX * tank.forward >= 0)) &&
-        ((tank.posY >= upperBound && dirY * tank.forward <= 0) || (tank.posY <= lowerBound && dirY * tank.forward >= 0))) {
+    // maybe hard code
+    let disX =  myWorld.maxX / 2 - tank.posX;
+    let disY = myWorld.maxY / 2 - tank.posY - tankOffset;
+    let dis = Math.sqrt(Math.pow(disX, 2) + Math.pow(disY, 2));
+    // if (((tank.posX >= leftBound && dirX * tank.forward <= 0) || (tank.posX <= rightBound && dirX * tank.forward >= 0)) &&
+    //    ((tank.posY >= upperBound && dirY * tank.forward <= 0) || (tank.posY <= lowerBound && dirY * tank.forward >= 0))) {
+     
+    if (dis < myWorld.mapRadius - tank.img.width / 2 || (dirX * disX + dirY * disY) * tank.forward > 0 ) {
         tank.posX += dirX * tank.forward * tank.speedM;
         tank.posY += dirY * tank.forward * tank.speedM;
     } else {
@@ -506,14 +514,11 @@ function loadGameScene() {
     };
 
     for (let i = 0; i < enemyNum; i++) {
-        enemySpawns = [leftBound + Math.random() * (rightBound - leftBound),
-            upperBound + Math.random() * (lowerBound - upperBound)
-        ];
         let enemy = {
             id: "e" + i,
-            posX: enemySpawns[0],
-            posY: enemySpawns[1],
-            orient: Math.random() * 360,
+            posX: enemySpawns[i % enemyNum].x,
+            posY: enemySpawns[i % enemyNum].y,
+            orient: enemySpawns[i % enemyNum].o,
             obstacle: 0,
             forward: 0,
             clockwise: 0,
@@ -543,14 +548,10 @@ function loadGameScene() {
         context.clearRect(0, 0, canvas.width, canvas.height);
         context.save();
 
-        player = {x: tankP.posX, y: tankP.posY};
-
-        // console.log("PosX: " + player.x + ", PosY: " + player.y);
-
-        let camX = clamp(player.x - canvas.width / 2, myWorld.minX, myWorld.maxX - canvas.width);
-        let camY = clamp(player.y - canvas.height / 2, myWorld.minY, myWorld.maxY - canvas.height);
+        myCamera = {x: clamp(tankP.posX - canvas.width / 2, myWorld.minX, myWorld.maxX - canvas.width),
+            y: clamp(tankP.posY - canvas.height / 2, myWorld.minY, myWorld.maxY - canvas.height)};
         // console.log("CamX: " + camX + ", CamY: " + camY);
-        context.translate(-camX, -camY);
+        context.translate(-myCamera.x, -myCamera.y);
 
         context.drawImage(mapImg, 0, 0);
 
@@ -595,9 +596,9 @@ function loadGameScene() {
         if (score > hScore) hScore = score;
         // draw texts
         context.save();
-        context.fillStyle = "black";
+        context.fillStyle = "white";
         context.font = "16px Georgia";
-        context.translate(camX, camY);
+        context.translate(myCamera.x, myCamera.y);
         context.fillText("Score: " + score, 60, 40);
         context.fillText("Highest score: " + hScore, 180, 40);
         // context.fillText("Energy remaining: " + hp, 110, 70);
@@ -642,7 +643,12 @@ function loadGameOverScene() {
 
     isOver = true;
 
+    context.save();
+    context.translate(myCamera.x, myCamera.y);
     context.clearRect(0, 0, canvas.width, canvas.height);
+    context.translate(-(myWorld.maxX - canvas.width) / 2, -(myWorld.maxY - canvas.height) / 2);
+    context.drawImage(mapImg, 0, 0);
+    context.restore();
 
     let gameOverMenu = document.createElement("div");
     gameOverMenu.className = "menu UI";
