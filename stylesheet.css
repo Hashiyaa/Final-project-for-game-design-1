@@ -6,7 +6,7 @@ canvas {
 }
 
 .header {
-    font-family: fantasy;
+    font-family: Georgia;
     font-size: 40px;
     color: black;
 }
@@ -63,7 +63,7 @@ canvas {
     width: 200px;
     height: 40px;
     margin-left: 55px;
-    font-family: fantasy;
+    font-family: Georgia;
     font-size: 20px;
 }
 
@@ -74,14 +74,14 @@ canvas {
 }
 
 .tagLabel {
-    font-family: fantasy;
+    font-family: Georgia;
     font-size: 20px;
     color: black;
     padding-left: 20px;
 }
 
 #gameOverText {
-    font-family: fantasy;
+    font-family: Georgia;
     font-size: 70px;
     color: yellow;
     margin-top: 120px;
@@ -89,7 +89,7 @@ canvas {
 }
 
 #scoreText {
-    font-family: fantasy;
+    font-family: Georgia;
     font-size: 40px;
     color: yellow;
 }

@@ -79,7 +79,7 @@ let mainWeaponsP = [];
 let shellP = {
     type: 'm',
     damage: 20,
-    fireRate: 50, // the smaller, the faster
+    fireRate: 100, // the smaller, the faster
     projSpeed: 7,
     projImg: shellImgP
 };
@@ -88,7 +88,7 @@ mainWeaponsP.push(shellP);
 let apShell = {
     type: 'm',
     damage: 50,
-    fireRate: 80,
+    fireRate: 160,
     projSpeed: 7,
     projImg: apShellImgP
 };
@@ -97,7 +97,7 @@ mainWeaponsP.push(apShell);
 let heShell = {
     type: 'm',
     damage: 40,
-    fireRate: 120,
+    fireRate: 200,
     projSpeed: 7,
     projImg: heShellImgP
 };
@@ -108,7 +108,7 @@ let secondaryWeaponsP = [];
 let machineGunP = {
     type: 's',
     damage: 1,
-    fireRate: 5,
+    fireRate: 10,
     projSpeed: 10,
     projImg: mgBulletImgP
 };
@@ -118,11 +118,21 @@ let mainWeaponsE = [];
 let shellE = {
     type: 'm',
     damage: 20,
-    fireRate: 50,
+    fireRate: 100,
     projSpeed: 7,
     projImg: shellImgE
 };
 mainWeaponsE.push(shellE);
+
+// armor-piercing shells
+let apShellE = {
+    type: 'm',
+    damage: 50,
+    fireRate: 160,
+    projSpeed: 7,
+    projImg: apShellImgP
+};
+mainWeaponsE.push(apShellE);
 
 export {
     myWorld,
@@ -137,6 +147,7 @@ let isOver = false;
 let isWinning = false;
 // UI settings
 let score = 0;
+let bonusScore = 0;
 let hScore = 0;
 let hpBarWidth = 60;
 let hpBarHeight = 10;
@@ -145,14 +156,12 @@ let buttonH = 100;
 
 // tank gloal vars
 let hpMaxP = 400;
-let hpMaxE = 50;
 let tankOffset = 15;
 
 // initial params of player's tank
 let tankP;
 
 // enemy parameters
-let enemyNum = 1;
 let enemies = [];
 let spawnOffset = 400;
 let enemySpawns = [{
@@ -180,6 +189,14 @@ let enemySpawns = [{
     x: spawnOffset / 2,
     y: spawnOffset * 2,
 }];
+
+let enemyNum = 1;
+let hpMaxE = 50;
+let enemySpeedM = 2;
+let enemySpeedR = 1;
+let enemyView = 45;
+let enemyMainWeaponType = 0;
+
 
 function clamp(value, min, max) {
     if (value < min) return min;
@@ -383,7 +400,7 @@ function loadTagScene() {
     let header = document.createElement("p");
     header.id = "tagHeader";
     header.className = "header";
-    header.innerHTML = "Challenges";
+    header.innerHTML = "Configure your enemies and win bonus points!";
     // header.style.lineHeight = "20px";
     tagMenu.appendChild(header);
 
@@ -398,7 +415,7 @@ function loadTagScene() {
     let enemyTagList = document.createElement("div");
     enemyTagList.id = "tagLeftList";
     enemyTagList.className = "menu";
-    enemyTagList.style.width = "450px";
+    enemyTagList.style.width = "600px";
     enemyTagList.style.height = "350px";
     enemyTagList.style.alignItems = "flex-start";
     enemyTagList.style.paddingLeft = "40px";
@@ -422,6 +439,8 @@ function loadTagScene() {
         {name: "speedR", cond: "Enemies' Rotation Speed * 2"}, 
         {name: "view", cond: "Enemies' range of view * 2"}, 
         {name: "shell", cond: "Enemies use armor-piercing shells"}];
+    let checkboxes = [];
+    let scoreLabels = [];
     for (let i = 0; i < enemyTags.length; i++) {
         let name = enemyTags[i].name + "Toggle";
         let enemyTag = document.createElement("div");
@@ -431,18 +450,39 @@ function loadTagScene() {
         checkbox.id = name;
         checkbox.className = "tagToggle";
         enemyTag.appendChild(checkbox);
+        checkboxes.push(checkbox);
         let label = document.createElement("label");
         label.className = "tagLabel";
         label.htmlFor = name;
         label.innerHTML = enemyTags[i].cond;
         enemyTag.appendChild(label);
+        let scoreLabel = document.createElement("label");
+        scoreLabel.className = "tagLabel";
+        scoreLabel.htmlFor = name;
+        scoreLabel.innerHTML = "+ 50 points * " + enemyNumSelect.value;
+        scoreLabel.style.display = "none";
+        scoreLabels.push(scoreLabel);
+        enemyTag.appendChild(scoreLabel);
+        checkbox.onchange = function() {
+            if (checkbox.checked) {
+                scoreLabel.style.display = "inline";
+            } else {
+                scoreLabel.style.display = "none";
+            }
+        };
         enemyTagList.appendChild(enemyTag);
     }
+
+    enemyNumSelect.onchange = function() {
+        for (let i = 0; i < scoreLabels.length; i++) {
+            scoreLabels[i].innerHTML = "+ 50 points * " + enemyNumSelect.value;
+        }
+    };
 
     let buttonPanel = document.createElement("div");
     buttonPanel.className = "menu";
     buttonPanel.style.position = "relative";
-    buttonPanel.style.height = "200px";
+    buttonPanel.style.height = "150px";
     buttonPanel.style.flexDirection = "row";
     tagMenu.appendChild(buttonPanel);
 
@@ -459,7 +499,26 @@ function loadTagScene() {
     goButton.id = "goButton";
     goButton.className = "rectButton";
     goButton.innerHTML = "GO!";
-    goButton.onclick = loadGameScene;
+    goButton.onclick = function() {
+        enemyNum = Number(enemyNumSelect.value);
+        for (let i = 0; i < checkboxes.length; i++) {
+            if (checkboxes[i].checked) {
+                if (i == 0) {
+                    hpMaxE *= 2;
+                } else if (i == 1) {
+                    enemySpeedM *= 2;
+                } else if (i == 2) {
+                    enemySpeedR *= 2;
+                } else if (i == 3) {
+                    enemyView *= 2;
+                } else if (i == 4) {
+                    enemyMainWeaponType = 1;
+                }
+                bonusScore += 50 * enemyNum;
+            }
+        }
+        loadGameScene();
+    };
     buttonPanel.appendChild(goButton);
 
     div.appendChild(tagMenu);
@@ -481,7 +540,7 @@ function loadGameScene() {
     for (let i = 0; i < enemyNum; i++) {
         let randPos = Math.floor(Math.random() * enemySpawns.length);
         let randO = (i % enemyNum) * 90 + 45 + 45 * Math.random();
-        let enemy = new TankE("e" + i, enemySpawns[randPos].x, enemySpawns[randPos].y, randO, 0, 0, 0, 2, 1, -1, hpMaxE, hpMaxE, 60, 0, 0, 'm', shellE, 0, [], 0, tankEImg, tankOffset);
+        let enemy = new TankE("e" + i, enemySpawns[randPos].x, enemySpawns[randPos].y, randO, 0, 0, 0, enemySpeedM, enemySpeedR, -1, hpMaxE, hpMaxE, enemyView, enemyMainWeaponType, 0, 'm', mainWeaponsE[enemyMainWeaponType], 0, [], 0, tankEImg, tankOffset);
         enemies.push(enemy);
         enemySpawns.splice(randPos, 1);
     }
@@ -546,7 +605,6 @@ function loadGameScene() {
 
         ////////// UI section //////////
         // update highest score
-        if (score > hScore) hScore = score;
         // draw texts
         context.save();
         context.fillStyle = "white";
@@ -610,6 +668,8 @@ function loadGameOverScene() {
     gameOverText.id = "gameOverText";
     if (isWinning) {
         gameOverText.innerHTML = "YOU WIN!";
+        score += bonusScore;
+        if (score > hScore) hScore = score;
     } else {
         gameOverText.innerHTML = "GAME OVER";
     }
