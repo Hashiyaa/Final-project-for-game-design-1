@@ -142,7 +142,7 @@ let buttonW = 250;
 let buttonH = 100;
 
 // tank gloal vars
-let hpMaxP = 2000;
+let hpMaxP = 400;
 let hpMaxE = 50;
 let tankOffset = 15;
 let projSpeed = 7;
@@ -376,12 +376,12 @@ function loadGameScene() {
     enemies = [];
 
     // reset the position of player's tank
-    tankP = new TankP("p0", 900, 900, 0, 0, 0, 0, 4, 2, hpMaxP, hpMaxP, 0, 0, 'm', shellP, 0, [], tankPImg, tankOffset);
+    tankP = new TankP("p0", 900, 900, 0, 0, 0, 0, 4, 2, hpMaxP, hpMaxP, 0, 0, 'm', shellP, 0, [], 0, tankPImg, tankOffset);
 
     for (let i = 0; i < enemyNum; i++) {
         let randPos = Math.floor(Math.random() * enemySpawns.length);
         let randO = (i % enemyNum) * 90 + 45 + 45 * Math.random();
-        let enemy = new TankE("e" + i, enemySpawns[randPos].x, enemySpawns[randPos].y, randO, 0, 0, 0, 2, 1, -1, hpMaxE, hpMaxE, 30, 0, 0, 'm', shellE, 0, [], tankEImg, tankOffset);
+        let enemy = new TankE("e" + i, enemySpawns[randPos].x, enemySpawns[randPos].y, randO, 0, 0, 0, 2, 1, -1, hpMaxE, hpMaxE, 30, 0, 0, 'm', shellE, 0, [], 0, tankEImg, tankOffset);
         enemies.push(enemy);
         enemySpawns.splice(randPos, 1);
     }

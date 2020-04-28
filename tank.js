@@ -25,7 +25,7 @@ function inside(x, y, vs) {
 // @ts-check
 class Tank {
 
-    constructor(id, posX, posY, orient, obstacle, forward, clockwise, speedM, speedR, hp, hpMax, mWeapon, sWeapon, weaponType, curWeapon, fireTimer, projectiles, img, offset) {
+    constructor(id, posX, posY, orient, obstacle, forward, clockwise, speedM, speedR, hp, hpMax, mWeapon, sWeapon, weaponType, curWeapon, fireTimer, projectiles, attacked, img, offset) {
         this.id = id;
         this.posX = posX;
         this.posY = posY;
@@ -43,6 +43,7 @@ class Tank {
         this.curWeapon = curWeapon;
         this.fireTimer = fireTimer;
         this.projectiles = projectiles;
+        this.attacked = attacked;
         this.img = img;
         this.offset = offset;
     }
@@ -183,6 +184,7 @@ class Tank {
 
                     if (tankE.hp > 0) {
                         tankE.hp -= this.curWeapon.damage;
+                        tankE.attacked = 1;
                     }
                 }
             }
@@ -200,15 +202,15 @@ class Tank {
 }
 
 export class TankP extends Tank {
-    constructor(id, posX, posY, orient, obstacle, forward, clockwise, speedM, speedR, hp, hpMax, mWeapon, sWeapon, weaponType, curWeapon, fireTimer, projectiles, img, offset) {
-        super(id, posX, posY, orient, obstacle, forward, clockwise, speedM, speedR, hp, hpMax, mWeapon, sWeapon, weaponType, curWeapon, fireTimer, projectiles, img, offset);
+    constructor(id, posX, posY, orient, obstacle, forward, clockwise, speedM, speedR, hp, hpMax, mWeapon, sWeapon, weaponType, curWeapon, fireTimer, projectiles, attacked, img, offset) {
+        super(id, posX, posY, orient, obstacle, forward, clockwise, speedM, speedR, hp, hpMax, mWeapon, sWeapon, weaponType, curWeapon, fireTimer, projectiles, attacked, img, offset);
     }
 
 }
 
 export class TankE extends Tank {
-    constructor(id, posX, posY, orient, obstacle, forward, clockwise, speedM, speedR, curR, hp, hpMax, view, mWeapon, sWeapon, weaponType, curWeapon, fireTimer, projectiles, img, offset) {
-        super(id, posX, posY, orient, obstacle, forward, clockwise, speedM, speedR, hp, hpMax, mWeapon, sWeapon, weaponType, curWeapon, fireTimer, projectiles, img, offset);
+    constructor(id, posX, posY, orient, obstacle, forward, clockwise, speedM, speedR, curR, hp, hpMax, view, mWeapon, sWeapon, weaponType, curWeapon, fireTimer, projectiles, attacked, img, offset) {
+        super(id, posX, posY, orient, obstacle, forward, clockwise, speedM, speedR, hp, hpMax, mWeapon, sWeapon, weaponType, curWeapon, fireTimer, projectiles, attacked, img, offset);
         this.curR = curR;
         this.view = view;
     }
@@ -231,7 +233,7 @@ export class TankE extends Tank {
                 this.forward = 1;
                 this.clockwise = 0;
             }
-            console.log("Id: " + this.id + ", curR: ", this.curR);
+            // console.log("Id: " + this.id + ", curR: ", this.curR);
             return;
         }
 
@@ -297,6 +299,7 @@ export class TankE extends Tank {
         // console.log("Orientation: " + tank.orient + ", Angle: " + angle);
         if (Math.abs(angle) < 1 && !obstacle) {
             // console.log("Fire!");
+            this.attacked = 0;
             this.forward = 0;
             this.clockwise = 0;
             if (this.fireTimer >= this.curWeapon.fireRate) {
@@ -307,8 +310,12 @@ export class TankE extends Tank {
             // console.log("Detected!");
             this.forward = 0;
             this.clockwise = dir;
+            this.attacked = 0;
+        } else if (this.attacked) {
+            this.forward = 0;
+            this.clockwise = dir * 2;
         } else {
-            // this.clockwise = 0;
+            this.clockwise = 0;
             this.forward = 1;
         }
     }
