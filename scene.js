@@ -10,6 +10,8 @@ let canvas = /** @type {HTMLCanvasElement} */ (document.getElementById("canvas")
 let context = canvas.getContext("2d");
 
 // create assets
+let bgm;
+
 let tankPImg = new Image();
 tankPImg.src = 'images/tank_player.png'; // Set source path
 let shellImgP = new Image();
@@ -145,41 +147,45 @@ let buttonH = 100;
 let hpMaxP = 400;
 let hpMaxE = 50;
 let tankOffset = 15;
-let projSpeed = 7;
 
 // initial params of player's tank
 let tankP;
 
 // enemy parameters
+let enemyNum = 1;
 let enemies = [];
 let spawnOffset = 400;
 let enemySpawns = [{
-        x: spawnOffset,
-        y: spawnOffset,
-    }, {
-        x: spawnOffset * 2,
-        y: spawnOffset / 2,
-    }, {
-        x: myWorld.maxX - spawnOffset,
-        y: spawnOffset,
-    }, {
-        x: myWorld.maxX - spawnOffset / 2,
-        y: spawnOffset * 2,
-    }, {
-        x: myWorld.maxX - spawnOffset,
-        y: myWorld.maxY - spawnOffset,
-    }, {
-        x: spawnOffset * 2,
-        y: myWorld.maxY - spawnOffset / 2,
-    }, {
-        x: spawnOffset,
-        y: myWorld.maxY - spawnOffset,
-    }, {
-        x: spawnOffset / 2,
-        y: spawnOffset * 2,
-    }
-];
-let enemyNum = 4;
+    x: spawnOffset,
+    y: spawnOffset,
+}, {
+    x: spawnOffset * 2,
+    y: spawnOffset / 2,
+}, {
+    x: myWorld.maxX - spawnOffset,
+    y: spawnOffset,
+}, {
+    x: myWorld.maxX - spawnOffset / 2,
+    y: spawnOffset * 2,
+}, {
+    x: myWorld.maxX - spawnOffset,
+    y: myWorld.maxY - spawnOffset,
+}, {
+    x: spawnOffset * 2,
+    y: myWorld.maxY - spawnOffset / 2,
+}, {
+    x: spawnOffset,
+    y: myWorld.maxY - spawnOffset,
+}, {
+    x: spawnOffset / 2,
+    y: spawnOffset * 2,
+}];
+
+function clamp(value, min, max) {
+    if (value < min) return min;
+    else if (value > max) return max;
+    return value;
+}
 
 // event listeners for keyboard
 window.onkeydown = function (event) {
@@ -333,8 +339,16 @@ function loadMenuScene() {
 
     context.clearRect(0, 0, canvas.width, canvas.height);
 
+    bgm.volume = 1;
+
     let startMenu = document.createElement("div");
     startMenu.className = "menu UI";
+
+    let title = document.createElement("p");
+    title.className = "header";
+    title.innerHTML = "Tank Expert";
+    title.style.fontSize = "60px";
+    startMenu.appendChild(title);
 
     // Create Buttons
     let startButton = document.createElement("button");
@@ -343,7 +357,7 @@ function loadMenuScene() {
     startButton.style.left = (0.5 * (canvas.width - buttonW)).toString() + "px";
     startButton.style.top = (0.5 * (canvas.height - buttonH)).toString() + "px";
     startButton.innerHTML = "START";
-    startButton.onclick = loadGameScene;
+    startButton.onclick = loadTagScene;
     startMenu.appendChild(startButton);
 
     // Temporary instructions
@@ -359,10 +373,96 @@ function loadMenuScene() {
     div.appendChild(startMenu);
 }
 
-function clamp(value, min, max) {
-    if (value < min) return min;
-    else if (value > max) return max;
-    return value;
+function loadTagScene() {
+    removeUI();
+
+    let tagMenu = document.createElement("div");
+    tagMenu.className = "menu UI";
+    // tagMenu.style.flexDirection = "row";
+
+    let header = document.createElement("p");
+    header.id = "tagHeader";
+    header.className = "header";
+    header.innerHTML = "Challenges";
+    // header.style.lineHeight = "20px";
+    tagMenu.appendChild(header);
+
+    let tagList = document.createElement("div");
+    tagList.id = "tagList";
+    tagList.className = "menu";
+    tagList.style.position = "relative";
+    tagList.style.height = "350px";
+    tagList.style.flexDirection = "row";
+    tagMenu.appendChild(tagList);
+
+    let enemyTagList = document.createElement("div");
+    enemyTagList.id = "tagLeftList";
+    enemyTagList.className = "menu";
+    enemyTagList.style.width = "450px";
+    enemyTagList.style.height = "350px";
+    enemyTagList.style.alignItems = "flex-start";
+    enemyTagList.style.paddingLeft = "40px";
+    tagList.appendChild(enemyTagList);
+
+    let enemyNumSelect = document.createElement("select");
+    enemyNumSelect.id = "enemyNumSelect";
+    enemyNumSelect.className = "select";
+    let values = [1, 2, 3, 4, 5, 6, 7, 8];
+    values.forEach(function (number) {
+        let opt = document.createElement("option");
+        opt.value = number.toString();
+        opt.text = number.toString() + " Enemy Tank";
+        if (number > 1) opt.text += "s";
+        enemyNumSelect.add(opt);
+    });
+    enemyTagList.appendChild(enemyNumSelect);
+
+    let enemyTags = [{name: "hp", cond: "Enemies' health points * 2"}, 
+        {name: "speedM", cond: "Enemies' Movement Speed * 2"}, 
+        {name: "speedR", cond: "Enemies' Rotation Speed * 2"}, 
+        {name: "view", cond: "Enemies' range of view * 2"}, 
+        {name: "shell", cond: "Enemies use armor-piercing shells"}];
+    for (let i = 0; i < enemyTags.length; i++) {
+        let name = enemyTags[i].name + "Toggle";
+        let enemyTag = document.createElement("div");
+        enemyTag.style.paddingLeft = "50px";
+        let checkbox = document.createElement("input");
+        checkbox.type = "checkbox";
+        checkbox.id = name;
+        checkbox.className = "tagToggle";
+        enemyTag.appendChild(checkbox);
+        let label = document.createElement("label");
+        label.className = "tagLabel";
+        label.htmlFor = name;
+        label.innerHTML = enemyTags[i].cond;
+        enemyTag.appendChild(label);
+        enemyTagList.appendChild(enemyTag);
+    }
+
+    let buttonPanel = document.createElement("div");
+    buttonPanel.className = "menu";
+    buttonPanel.style.position = "relative";
+    buttonPanel.style.height = "200px";
+    buttonPanel.style.flexDirection = "row";
+    tagMenu.appendChild(buttonPanel);
+
+    let backButton = document.createElement("button");
+    backButton.id = "backButton";
+    backButton.className = "rectButton";
+    backButton.innerHTML = "BACK";
+    backButton.style.width = "150px";
+    backButton.style.height = "60px";
+    backButton.onclick = loadMenuScene;
+    buttonPanel.appendChild(backButton);
+
+    let goButton = document.createElement("button");
+    goButton.id = "goButton";
+    goButton.className = "rectButton";
+    goButton.innerHTML = "GO!";
+    goButton.onclick = loadGameScene;
+    buttonPanel.appendChild(goButton);
+
+    div.appendChild(tagMenu);
 }
 
 function loadGameScene() {
@@ -381,7 +481,7 @@ function loadGameScene() {
     for (let i = 0; i < enemyNum; i++) {
         let randPos = Math.floor(Math.random() * enemySpawns.length);
         let randO = (i % enemyNum) * 90 + 45 + 45 * Math.random();
-        let enemy = new TankE("e" + i, enemySpawns[randPos].x, enemySpawns[randPos].y, randO, 0, 0, 0, 2, 1, -1, hpMaxE, hpMaxE, 30, 0, 0, 'm', shellE, 0, [], 0, tankEImg, tankOffset);
+        let enemy = new TankE("e" + i, enemySpawns[randPos].x, enemySpawns[randPos].y, randO, 0, 0, 0, 2, 1, -1, hpMaxE, hpMaxE, 60, 0, 0, 'm', shellE, 0, [], 0, tankEImg, tankOffset);
         enemies.push(enemy);
         enemySpawns.splice(randPos, 1);
     }
@@ -391,6 +491,8 @@ function loadGameScene() {
 
     function draw() {
         if (isOver) return;
+
+        bgm.volume = 0.5;
 
         context.clearRect(0, 0, canvas.width, canvas.height);
         context.save();
@@ -404,15 +506,15 @@ function loadGameScene() {
 
         context.drawImage(mapImg, 0, 0);
 
-        
+
         ////////// tank section //////////
         enemies.forEach(tankE => {
             if (tankE.hp > 0) {
                 drawTank(tankE);
-                tankE.move();
                 tankE.searchForPlayer(tankP);
                 tankE.detectCollision(tankP);
                 tankE.detectHit([tankP]);
+                tankE.move();
                 tankE.fireTimer++;
             } else {
                 let i = enemies.indexOf(tankE);
@@ -423,9 +525,9 @@ function loadGameScene() {
 
         drawTank(tankP);
         tankP.switchWeapon();
-        tankP.move();
         tankP.detectCollision(enemies);
         tankP.detectHit(enemies);
+        tankP.move();
         tankP.fireTimer++;
 
         // draw the skull if hit
@@ -543,7 +645,8 @@ window.onload = function () {
     audioButton.style.backgroundImage = "url('images/audio.png')";
 
     let audio = /** @type {HTMLAudioElement} */ (document.getElementById("music"));
-    // audio.play();
+    bgm = audio;
+    audio.play();
     audioButton.onclick = function () {
         if (audio.muted) {
             audio.muted = false;

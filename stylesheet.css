@@ -5,6 +5,12 @@ canvas {
     /* background-image: url("images/background.png"); */
 }
 
+.header {
+    font-family: fantasy;
+    font-size: 40px;
+    color: black;
+}
+
 .menu {
     position: absolute;
     left: 0px;
@@ -18,12 +24,12 @@ canvas {
 }
 
 .rectButton {
-    width: 250px;
-    height: 100px;
+    width: 150px;
+    height: 60px;
     border: 10px solid orange;
-    border-radius: 30px;
+    border-radius: 10px;
     background-color: rgb(240, 180, 15);
-    font-size: 30px;
+    font-size: 20px;
     color: rgb(200, 240, 0);
 }
 
@@ -51,6 +57,27 @@ canvas {
     background-size: cover;
     border: none;
     z-index: 1;
+}
+
+.select {
+    width: 200px;
+    height: 40px;
+    margin-left: 55px;
+    font-family: fantasy;
+    font-size: 20px;
+}
+
+.tagToggle {
+    width: 20px;
+    height: 20px;
+    padding-left: 20px;
+}
+
+.tagLabel {
+    font-family: fantasy;
+    font-size: 20px;
+    color: black;
+    padding-left: 20px;
 }
 
 #gameOverText {

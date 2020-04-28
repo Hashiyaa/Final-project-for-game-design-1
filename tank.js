@@ -22,6 +22,30 @@ function inside(x, y, vs) {
     return inside;
 }
 
+function intersect(point1, point2, vs) {
+    let number = 0;
+    for (let i = 0, j = vs.length - 1; i < vs.length; j = i++) {
+        let vec1 = [vs[j][0] - vs[i][0], vs[j][1] - vs[i][1]];
+        let vec2 = [vs[i][0] - point1[0], vs[i][1] - point1[1]];
+        let vec3 = [vs[i][0] - point2[0], vs[i][1] - point2[1]];
+        let intersect1 = (vec2[0] * vec1[1] - vec2[1] * vec1[0]) /
+            (vec3[0] * vec1[1] - vec3[1] * vec1[0]);
+        intersect1 = intersect1 / Math.abs(intersect1);
+        let vec4 = [point2[0] - point1[0], point2[1] - point1[1]];
+        let vec5 = [point1[0] - vs[i][0], point1[1] - vs[i][1]];
+        let vec6 = [point1[0] - vs[j][0], point1[1] - vs[j][1]];
+        let intersect2 = (vec5[0] * vec4[1] - vec5[1] * vec4[0]) /
+            (vec6[0] * vec4[1] - vec6[1] * vec4[0]);
+        intersect2 = intersect2 / Math.abs(intersect2);
+        // console.log("Intersect: " + intersect1 + " and " + intersect2);
+        if (intersect1 == -1 && intersect2 == -1) {
+            number++;
+        }
+    }
+    console.log("Number: " + number);
+    return number > 1;
+}
+
 // @ts-check
 class Tank {
 
@@ -275,30 +299,21 @@ export class TankE extends Tank {
         let dir = vec1[0] * vec2[1] - vec1[1] * vec2[0];
         dir /= Math.abs(dir); // positive -> right, negative -> left
 
-        let obstacle;
-        let obstacleSide;
-        search: for (let i = 0; i < obstacles.length; i++) {
+
+        let obstacle = 0;
+        // let obstacleSide;
+        for (let i = 0; i < obstacles.length; i++) {
             let obs = obstacles[i];
-            for (let j = 0; j < obs.length; j++) {
-                let vecSide = [obs[j][0] - this.posX, obs[j][1] - this.posY];
-                let curSide = vecSide[0] * vec2[1] - vecSide[1] * vec2[0];
-                if (j == 0) {
-                    obstacleSide = curSide;
-                } else {
-                    if (obstacleSide * curSide < 0) {
-                        obstacle = 1;
-                        break search;
-                    } else {
-                        obstacle = 0;
-                    }
-                }
+            if (intersect([tankP.posX, tankP.posY - tankP.offset], [this.posX, this.posY - this.offset], obs)) {
+                obstacle = 1;
+                break;
             }
         }
 
         // console.log("Id: " + this.id + ", Obs: " + obstacle);
         // console.log("Orientation: " + tank.orient + ", Angle: " + angle);
-        if (Math.abs(angle) < 1 && !obstacle) {
-            // console.log("Fire!");
+        if (Math.abs(angle) < 3 && !obstacle) {
+            console.log("Fire!");
             this.attacked = 0;
             this.forward = 0;
             this.clockwise = 0;
@@ -307,11 +322,12 @@ export class TankE extends Tank {
                 this.fireTimer = 0;
             }
         } else if (Math.abs(angle) < this.view * 0.5 && !obstacle) {
-            // console.log("Detected!");
+            console.log("Detected!");
+            this.attacked = 0;
             this.forward = 0;
             this.clockwise = dir;
-            this.attacked = 0;
         } else if (this.attacked) {
+            console.log("Attacked!");
             this.forward = 0;
             this.clockwise = dir * 2;
         } else {
