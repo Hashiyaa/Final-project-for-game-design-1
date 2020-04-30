@@ -57,6 +57,7 @@ canvas {
     top: 20px;
     width: 40px;
     height: 40px;
+    background-image: url('images/mute.png');
     background-color: #FFF0;
     background-position: center;
     background-repeat: no-repeat;

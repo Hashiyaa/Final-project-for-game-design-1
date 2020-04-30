@@ -12,6 +12,7 @@ let context = canvas.getContext("2d");
 
 //////////////////// assets ////////////////////
 let bgm = new Audio("sound/starsWar.mp3");
+let bgmPlayed = false;
 bgm.loop = true;
 let clickAudio = new Audio("sound/click.wav");
 let toggleOnAudio = new Audio("sound/toggleOn.wav");
@@ -409,24 +410,7 @@ function loadMenuScene() {
 
     context.clearRect(0, 0, canvas.width, canvas.height);
 
-    let audioButton = document.createElement("button");
-    audioButton.id = "audioButton";
-    audioButton.style.backgroundImage = "url('images/audio.png')";
-
-    // bgm.muted = true; // for debug use
     bgm.volume = 0.6;
-    bgm.play();
-    audioButton.onclick = function () {
-        // clickAudio.play();
-        if (bgm.muted) {
-            bgm.muted = false;
-            audioButton.style.backgroundImage = "url('images/audio.png')";
-        } else {
-            bgm.muted = true;
-            audioButton.style.backgroundImage = "url('images/mute.png')";
-        }
-    };
-    div.appendChild(audioButton);
 
     let startMenu = document.createElement("div");
     startMenu.className = "menu UI";
@@ -959,4 +943,24 @@ function loadGameOverScene() {
     div.appendChild(gameOverMenu);
 }
 
-window.onload = loadMenuScene;
+window.onload = function() {
+    let audioButton = document.createElement("button");
+    audioButton.id = "audioButton";
+
+    audioButton.onclick = function () {
+        if (!bgmPlayed) {
+            bgm.play();
+            bgm.muted = false;
+            audioButton.style.backgroundImage = "url('images/audio.png')";
+            bgmPlayed = true;
+        } else if (bgm.muted) {
+            bgm.muted = false;
+            audioButton.style.backgroundImage = "url('images/audio.png')";
+        } else {
+            bgm.muted = true;
+            audioButton.style.backgroundImage = "url('images/mute.png')";
+        }
+    };
+    div.appendChild(audioButton);
+    loadMenuScene();
+}
