@@ -108,15 +108,17 @@ canvas {
 }
 
 #gameOverText {
-    font-family: Georgia;
+    font-family: Impact;
     font-size: 70px;
     color: yellow;
+    line-height: 40px;
     margin-top: 120px;
 }
 
 #scoreText {
-    font-family: Georgia;
+    font-family: Impact;
     font-size: 40px;
     color: yellow;
+    line-height: 20px;
+    margin-bottom: 100px;
 }
-

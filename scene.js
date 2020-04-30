@@ -11,7 +11,11 @@ let canvas = /** @type {HTMLCanvasElement} */ (document.getElementById("canvas")
 let context = canvas.getContext("2d");
 
 //////////////////// assets ////////////////////
-let bgm;
+let bgm = new Audio("sound/starsWar.mp3");
+bgm.loop = true;
+let clickAudio = new Audio("sound/click.wav");
+let toggleOnAudio = new Audio("sound/toggleOn.wav");
+let toggleOffAudio = new Audio("sound/toggleOff.wav");
 
 let tankPImg = new Image();
 tankPImg.src = 'images/tank_player.png'; // Set source path
@@ -83,7 +87,7 @@ let shellP = {
     type: 'm',
     damage: 20,
     fireRate: 100, // the smaller, the faster
-    projSpeed: 7,
+    projSpeed: 10,
     projImg: shellImgP
 };
 mainWeaponsP.push(shellP);
@@ -92,7 +96,7 @@ let apShell = {
     type: 'm',
     damage: 50,
     fireRate: 150,
-    projSpeed: 8,
+    projSpeed: 12,
     projImg: apShellImgP
 };
 mainWeaponsP.push(apShell);
@@ -101,28 +105,28 @@ let heShell = {
     type: 'm',
     damage: 40,
     fireRate: 200,
-    projSpeed: 7,
+    projSpeed: 10,
     projImg: heShellImgP
 };
 mainWeaponsP.push(heShell);
 
-let secondaryWeaponsP = [];
-// machine gun
-let machineGunP = {
-    type: 's',
-    damage: 1,
-    fireRate: 10,
-    projSpeed: 10,
-    projImg: mgBulletImgP
-};
-secondaryWeaponsP.push(machineGunP);
+// let secondaryWeaponsP = [];
+// // machine gun
+// let machineGunP = {
+//     type: 's',
+//     damage: 1,
+//     fireRate: 7,
+//     projSpeed: 30,
+//     projImg: mgBulletImgP
+// };
+// secondaryWeaponsP.push(machineGunP);
 
 let mainWeaponsE = [];
 let shellE = {
     type: 'm',
     damage: 20,
     fireRate: 120,
-    projSpeed: 6,
+    projSpeed: 9,
     projImg: shellImgE
 };
 mainWeaponsE.push(shellE);
@@ -132,7 +136,7 @@ let apShellE = {
     type: 'm',
     damage: 50,
     fireRate: 160,
-    projSpeed: 7,
+    projSpeed: 11,
     projImg: apShellImgP
 };
 mainWeaponsE.push(apShellE);
@@ -142,7 +146,7 @@ export {
     myWorld,
     obstacles,
     mainWeaponsP,
-    secondaryWeaponsP,
+    // secondaryWeaponsP,
     mainWeaponsE
 };
 
@@ -223,20 +227,20 @@ window.onkeydown = function (event) {
             }
         }
 
-        // 1
-        if (key === 49) {
-            tankP.weaponType = 'm';
-        }
+        // // 1
+        // if (key === 49) {
+        //     tankP.weaponType = 'm';
+        // }
 
-        // 2
-        if (key === 50) {
-            tankP.weaponType = 's';
-        }
+        // // 2
+        // if (key === 50) {
+        //     tankP.weaponType = 's';
+        // }
 
-        // 3
-        if (key === 51) {
+        // // 3
+        // if (key === 51) {
 
-        }
+        // }
 
         if (tankP.forward == 0) {
             // right arrow
@@ -315,7 +319,8 @@ function drawProjectiles(tank) {
     for (let i = 0; i < tank.projectiles.length; i++) {
         let proj = tank.projectiles[i];
         context.save();
-        if (proj.x >= myWorld.minX && proj.x <= myWorld.maxX && proj.y >= myWorld.minY && proj.y <= myWorld.maxY) {
+        let dis = Math.sqrt(Math.pow(proj.x - myWorld.maxX / 2, 2) + Math.pow(proj.y - myWorld.maxY / 2, 2));
+        if (dis < myWorld.mapRadius) {
             // update the position
             let dirX = Math.sin(proj.a / 180 * Math.PI);
             let dirY = -Math.cos(proj.a / 180 * Math.PI);
@@ -371,21 +376,20 @@ function loadMenuScene() {
     audioButton.id = "audioButton";
     audioButton.style.backgroundImage = "url('images/audio.png')";
 
-    let audio = /** @type {HTMLAudioElement} */ (document.getElementById("music"));
-    audio.volume = 1;
-    audio.play();
+    bgm.muted = true; // for debug use
+    bgm.volume = 1;
+    bgm.play();
     audioButton.onclick = function () {
-        if (audio.muted) {
-            audio.muted = false;
+        // clickAudio.play();
+        if (bgm.muted) {
+            bgm.muted = false;
             audioButton.style.backgroundImage = "url('images/audio.png')";
         } else {
-            audio.muted = true;
+            bgm.muted = true;
             audioButton.style.backgroundImage = "url('images/mute.png')";
         }
     };
     div.appendChild(audioButton);
-
-    bgm = audio;
 
     let startMenu = document.createElement("div");
     startMenu.className = "menu UI";
@@ -404,7 +408,11 @@ function loadMenuScene() {
     startButton.style.left = (0.5 * (canvas.width - buttonW)).toString() + "px";
     startButton.style.top = (0.5 * (canvas.height - buttonH)).toString() + "px";
     startButton.innerHTML = "START";
-    startButton.onclick = loadTagScene;
+    startButton.onclick = function() {
+        clickAudio.play();
+        clickAudio.currentTime = 0;
+        loadTagScene();
+    };
     startMenu.appendChild(startButton);
 
     // Temporary instructions
@@ -413,8 +421,8 @@ function loadMenuScene() {
     instructionText.innerHTML =
         "1. Press up and down arrow keys to move forward and backward;\n" +
         "2. Press left and right arrow keys to turn anti-clockwise and clockwise;\n" +
-        "3. Press 1 and 2 to switch between the main and secondary weapon;\n" +
-        "4. Press space to shoot!";
+        // "3. Press 1 and 2 to switch between the main and secondary weapon;\n" +
+        "3. Press space to shoot!";
     startMenu.appendChild(instructionText);
 
     div.appendChild(startMenu);
@@ -437,7 +445,10 @@ function setTankParams() {
 
 function addToggleHandler(checkbox, scoreLabel, bonusLabel, point, mode) {
     checkbox.onchange = function () {
+        
         if (checkbox.checked) {
+            toggleOnAudio.play();
+            toggleOnAudio.currentTime = 0;
             scoreLabel.style.display = "inline";
             if (mode == 'e') {
                 bonusScore += point * enemyNum;
@@ -445,6 +456,8 @@ function addToggleHandler(checkbox, scoreLabel, bonusLabel, point, mode) {
                 bonusScore -= point * lifeNum;
             }
         } else {
+            toggleOffAudio.play();
+            toggleOffAudio.currentTime = 0;
             scoreLabel.style.display = "none";
             if (mode == 'e') {
                 bonusScore -= point * enemyNum;
@@ -560,6 +573,8 @@ function loadTagScene() {
     }
 
     enemyNumSelect.onchange = function () {
+        toggleOnAudio.play();
+        toggleOnAudio.currentTime = 0;
         let sum = 0;
         for (let i = 0; i < scoreLabelsE.length; i++) {
             scoreLabelsE[i].innerHTML = "+ " + enemyTags[i].point + " points * " + enemyNumSelect.value;
@@ -640,6 +655,8 @@ function loadTagScene() {
     }
 
     lifeNumSelect.onchange = function () {
+        toggleOnAudio.play();
+        toggleOnAudio.currentTime = 0;
         let sum = 0;
         for (let i = 0; i < scoreLabelsP.length; i++) {
             scoreLabelsP[i].innerHTML = "- " + playerTags[i].point + " points * " + lifeNumSelect.value;
@@ -666,7 +683,11 @@ function loadTagScene() {
     backButton.className = "rectButton";
     backButton.innerHTML = "BACK";
     backButton.style.marginLeft = "50px";
-    backButton.onclick = loadMenuScene;
+    backButton.onclick = function() {
+        clickAudio.play();
+        clickAudio.currentTime = 0;
+        loadMenuScene();
+    };
     buttonPanel.appendChild(backButton);
 
     let goButton = document.createElement("button");
@@ -675,6 +696,8 @@ function loadTagScene() {
     goButton.innerHTML = "GO!";
     goButton.style.marginRight = "50px";
     goButton.onclick = function () {
+        clickAudio.play();
+        clickAudio.currentTime = 0;
         for (let i = 0; i < checkboxesE.length; i++) {
             if (checkboxesE[i].checked) {
                 if (i == 0) {
@@ -733,12 +756,12 @@ function loadGameScene() {
     let enemySpawns = [...enemySpawnsPreset];
 
     // reset the position of player's tank
-    tankP = new TankP("p0", lifeNum, 900, 900, 0, 0, 0, 0, speedMP, speedRP, hpMaxP, hpMaxP, mainWeaponTypeP, 0, 'm', mainWeaponsP[mainWeaponTypeP], 0, [], 0, tankPImg, tankOffset);
+    tankP = new TankP("p0", lifeNum, 900, 900, 0, 0, 0, 0, speedMP, speedRP, hpMaxP, hpMaxP, mainWeaponTypeP, 0, mainWeaponsP[mainWeaponTypeP], 0, [], 0, tankPImg, tankOffset);
 
     for (let i = 0; i < enemyNum; i++) {
         let randPos = Math.floor(Math.random() * enemySpawns.length);
         let randO = (i % enemyNum) * 90 + 45 + 45 * Math.random();
-        let enemy = new TankE("e" + i, enemySpawns[randPos].x, enemySpawns[randPos].y, randO, 0, 0, 0, speedME, speedRE, -1, hpMaxE, hpMaxE, viewE, mainWeaponTypeE, 0, 'm', mainWeaponsE[mainWeaponTypeE], 0, [], 0, tankEImg, tankOffset);
+        let enemy = new TankE("e" + i, enemySpawns[randPos].x, enemySpawns[randPos].y, randO, 0, 0, 0, speedME, speedRE, -1, hpMaxE, hpMaxE, viewE, mainWeaponTypeE, 0, mainWeaponsE[mainWeaponTypeE], 0, [], 0, tankEImg, tankOffset);
         enemies.push(enemy);
         enemySpawns.splice(randPos, 1);
     }
@@ -781,7 +804,7 @@ function loadGameScene() {
         });
 
         drawTank(tankP);
-        tankP.switchWeapon();
+        // tankP.switchWeapon();
         tankP.detectCollision(enemies);
         tankP.detectHit(enemies);
         tankP.move();
@@ -863,6 +886,7 @@ function loadGameOverScene() {
 
     let gameOverMenu = document.createElement("div");
     gameOverMenu.className = "menu UI";
+    gameOverMenu.style.justifyContent = "flex-start";
 
     let gameOverText = document.createElement("p");
     gameOverText.id = "gameOverText";
@@ -871,21 +895,26 @@ function loadGameOverScene() {
         score = Math.max(score + bonusScore, 0);
         if (score > hScore) hScore = score;
     } else {
-        gameOverText.innerHTML = "GAME OVER";
+        gameOverText.innerHTML = "GAME OVER~";
     }
     gameOverMenu.appendChild(gameOverText);
 
     let scoreText = document.createElement("p");
     scoreText.id = "scoreText";
-    scoreText.innerHTML = "Score: " + score;
+    scoreText.innerHTML = "Your score: " + score;
     gameOverMenu.appendChild(scoreText);
 
     let tryAgainButton = document.createElement("button");
     tryAgainButton.id = "tryAgainButton";
     tryAgainButton.className = "rectButton";
     tryAgainButton.innerHTML = "TRY AGAIN";
+    tryAgainButton.style.width = "200px";
     tryAgainButton.style.marginBottom = "50px";
-    tryAgainButton.onclick = loadGameScene;
+    tryAgainButton.onclick = function() {
+        clickAudio.play();
+        clickAudio.currentTime = 0;
+        loadGameScene();
+    };
     gameOverMenu.appendChild(tryAgainButton);
 
     let quitButton = document.createElement("button");
@@ -893,7 +922,11 @@ function loadGameOverScene() {
     quitButton.className = "rectButton";
     quitButton.innerHTML = "QUIT";
     quitButton.style.marginBottom = "50px";
-    quitButton.onclick = loadMenuScene;
+    quitButton.onclick = function() {
+        clickAudio.play();
+        clickAudio.currentTime = 0;
+        loadMenuScene();
+    };
     gameOverMenu.appendChild(quitButton);
 
     div.appendChild(gameOverMenu);

@@ -1,10 +1,14 @@
 import {
     myWorld,
-    obstacles,
-    mainWeaponsP,
-    secondaryWeaponsP,
-    mainWeaponsE
+    obstacles
 } from "./scene.js";
+
+let fireAudioP = new Audio("sound/fireP.wav");
+let fireAudioE = new Audio("sound/fireE.wav");
+// let mgAudio = new Audio("sound/machinegun.wav");
+// let hitAudio = new Audio("sound/hit.wav");
+let hitWallAudio = new Audio("sound/hitWall.wav");
+// let explodeAudio = new Audio("sound/explode.wav");
 
 function inside(x, y, vs) {
     // ray-casting algorithm based on
@@ -49,7 +53,7 @@ function intersect(point1, point2, vs) {
 // @ts-check
 class Tank {
 
-    constructor(id, posX, posY, orient, obstacle, forward, clockwise, speedM, speedR, hp, hpMax, mWeapon, sWeapon, weaponType, curWeapon, fireTimer, projectiles, attacked, img, offset) {
+    constructor(id, posX, posY, orient, obstacle, forward, clockwise, speedM, speedR, hp, hpMax, mWeapon, sWeapon, curWeapon, fireTimer, projectiles, attacked, img, offset) {
         this.id = id;
         this.posX = posX;
         this.posY = posY;
@@ -63,7 +67,7 @@ class Tank {
         this.hpMax = hpMax;
         this.mWeapon = mWeapon;
         this.sWeapon = sWeapon;
-        this.weaponType = weaponType;
+        // this.weaponType = weaponType;
         this.curWeapon = curWeapon;
         this.fireTimer = fireTimer;
         this.projectiles = projectiles;
@@ -76,6 +80,7 @@ class Tank {
         // 0 and 1 -> 1, 2 and 3 -> -1
         if (this.obstacle != -1 && (1 - 2 * Math.floor(this.obstacle / 2)) * this.forward > 0) {
             // console.log("Stuck!");
+            hitWallAudio.play();
             return;
         }
         // update the orientation
@@ -95,10 +100,25 @@ class Tank {
             this.posX += dirX * this.forward * this.speedM;
             this.posY += dirY * this.forward * this.speedM;
             this.obstacle = -1;
+        } else if (this.forward != 0) {
+            hitWallAudio.play();
+            // hitWallAudio.currentTime = 0;
         }
     }
 
     fire() {
+        if (this.id.charAt(0) == 'p') {
+            // if (this.weaponType == 'm') {
+            fireAudioP.play();
+            fireAudioP.currentTime = 0;
+            // } else {
+            //     mgAudio.play();
+            //     mgAudio.currentTime = 0;
+            // }
+        } else {
+            fireAudioE.play();
+            fireAudioE.currentTime = 0;
+        }
         let offsetX = Math.sin(this.orient / 180 * Math.PI) * (this.img.height * 0.5 + this.offset);
         let offsetY = -Math.cos(this.orient / 180 * Math.PI) * (this.img.height * 0.5 + this.offset);
         let proj = {
@@ -111,15 +131,15 @@ class Tank {
         this.projectiles.push(proj);
     }
 
-    switchWeapon() {
-        let mainWeapons = this.id.charAt[0] = 'p' ? mainWeaponsP : mainWeaponsE;
-        let secondaryWeapons = this.id.charAt[0] = 'p' ? secondaryWeaponsP : secondaryWeaponsE;
-        if (this.weaponType == 'm') {
-            this.curWeapon = mainWeapons[this.mWeapon];
-        } else {
-            this.curWeapon = secondaryWeapons[this.sWeapon];
-        }
-    }
+    // switchWeapon() {
+    //     let mainWeapons = this.id.charAt[0] = 'p' ? mainWeaponsP : mainWeaponsE;
+    //     let secondaryWeapons = this.id.charAt[0] = 'p' ? secondaryWeaponsP : secondaryWeaponsE;
+    //     if (this.weaponType == 'm') {
+    //         this.curWeapon = mainWeapons[this.mWeapon];
+    //     } else {
+    //         this.curWeapon = secondaryWeapons[this.sWeapon];
+    //     }
+    // }
 
     getPolygon(mode) {
         let center = [this.posX, this.posY + this.offset];
@@ -226,16 +246,16 @@ class Tank {
 }
 
 export class TankP extends Tank {
-    constructor(id, lifeNum, posX, posY, orient, obstacle, forward, clockwise, speedM, speedR, hp, hpMax, mWeapon, sWeapon, weaponType, curWeapon, fireTimer, projectiles, attacked, img, offset) {
-        super(id, posX, posY, orient, obstacle, forward, clockwise, speedM, speedR, hp, hpMax, mWeapon, sWeapon, weaponType, curWeapon, fireTimer, projectiles, attacked, img, offset);
+    constructor(id, lifeNum, posX, posY, orient, obstacle, forward, clockwise, speedM, speedR, hp, hpMax, mWeapon, sWeapon, curWeapon, fireTimer, projectiles, attacked, img, offset) {
+        super(id, posX, posY, orient, obstacle, forward, clockwise, speedM, speedR, hp, hpMax, mWeapon, sWeapon, curWeapon, fireTimer, projectiles, attacked, img, offset);
         this.lifeNum = lifeNum;
     }
 
 }
 
 export class TankE extends Tank {
-    constructor(id, posX, posY, orient, obstacle, forward, clockwise, speedM, speedR, curR, hp, hpMax, view, mWeapon, sWeapon, weaponType, curWeapon, fireTimer, projectiles, attacked, img, offset) {
-        super(id, posX, posY, orient, obstacle, forward, clockwise, speedM, speedR, hp, hpMax, mWeapon, sWeapon, weaponType, curWeapon, fireTimer, projectiles, attacked, img, offset);
+    constructor(id, posX, posY, orient, obstacle, forward, clockwise, speedM, speedR, curR, hp, hpMax, view, mWeapon, sWeapon, curWeapon, fireTimer, projectiles, attacked, img, offset) {
+        super(id, posX, posY, orient, obstacle, forward, clockwise, speedM, speedR, hp, hpMax, mWeapon, sWeapon, curWeapon, fireTimer, projectiles, attacked, img, offset);
         this.curR = curR;
         this.view = view;
     }
