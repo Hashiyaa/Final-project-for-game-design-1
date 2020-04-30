@@ -29,6 +29,12 @@ let mgBulletImgP = new Image();
 mgBulletImgP.src = 'images/mgBullet_player.png';
 let mapImg = new Image();
 mapImg.src = 'images/map.png';
+let miniMapImg = new Image();
+miniMapImg.src = "images/mapMini.png";
+let heartImg = new Image();
+heartImg.src = 'images/heart.png';
+let heartEmptyImg = new Image();
+heartEmptyImg.src = 'images/heartEmpty.png';
 
 let tankEImg = new Image();
 tankEImg.src = 'images/tank_enemy.png';
@@ -338,6 +344,37 @@ function drawProjectiles(tank) {
     }
 }
 
+function drawMiniMap() {
+    context.save();
+    context.translate(canvas.width - miniMapImg.width - 10, canvas.height - miniMapImg.height - 10);
+    context.drawImage(miniMapImg, 0, 0);
+    let ratio = [miniMapImg.width / myWorld.maxX, miniMapImg.height / myWorld.maxY];
+    context.fillStyle = "blue";
+    context.strokeStyle = "blue";
+    context.lineWidth = 3;
+    context.beginPath();
+    let centerP = [ratio[0] * tankP.posX, ratio[1] * tankP.posY];
+    context.arc(centerP[0], centerP[1], 4, 0, Math.PI * 2);
+    context.moveTo(centerP[0], centerP[1]);
+    context.lineTo(10 * Math.sin(tankP.orient / 180 * Math.PI) + centerP[0], -10 * Math.cos(tankP.orient / 180 * Math.PI) + centerP[1]);
+    context.fill();
+    context.stroke();
+
+    context.fillStyle = "red";
+    context.strokeStyle = "red";
+    for (let i = 0; i < enemies.length; i++) {
+        context.beginPath();
+        let centerE = [ratio[0] * enemies[i].posX, ratio[1] * enemies[i].posY];
+        context.arc(centerE[0], centerE[1], 3, 0, Math.PI * 2);
+        // context.moveTo(centerE[0], centerE[1]);
+        // context.lineTo(8 * Math.sin(enemies[i].orient / 180 * Math.PI) + centerE[0], -8 * Math.cos(enemies[i].orient / 180 * Math.PI) + centerE[1]);
+        context.fill();
+        context.stroke();
+    }
+    
+    context.restore();
+}
+
 function drawRefDot(posX, posY) {
     context.save();
     context.beginPath();
@@ -484,7 +521,7 @@ function loadTagScene() {
     let header = document.createElement("p");
     header.id = "tagHeader";
     header.className = "header";
-    header.innerHTML = "Configure your enemies and win bonus points!";
+    header.innerHTML = "Configure the tanks and win bonus points!";
     header.style.fontSize = "35px";
     tagMenu.appendChild(header);
 
@@ -786,7 +823,6 @@ function loadGameScene() {
 
         context.drawImage(mapImg, 0, 0);
 
-
         ////////// tank section //////////
         enemies.forEach(tankE => {
             if (tankE.hp > 0) {
@@ -810,20 +846,6 @@ function loadGameScene() {
         tankP.move();
         tankP.fireTimer++;
 
-        // draw the skull if hit
-        // if (skull) {
-        //     if (skullTimer < skullRate) {
-        //         let skullImg = new Image();
-        //         skullImg.src = "images/skull.png";
-        //         context.drawImage(skullImg, skull.posX - 0.5 * skullImg.width,
-        //             skull.posY - 0.5 * skullImg.height);
-        //         skullTimer++;
-        //     } else {
-        //         skull = null;
-        //         skullTimer = 0;
-        //     }
-        // }
-
         ////////// UI section //////////
         // update highest score
         // draw texts
@@ -833,17 +855,15 @@ function loadGameScene() {
         context.translate(myCamera.x, myCamera.y);
         context.fillText("Score: " + score, 60, 40);
         context.fillText("Highest score: " + hScore, 180, 40);
-        // context.fillText("Energy remaining: " + hp, 110, 70);
-
-        // if (scoreMsg) {
-        //     if (scoreMsgTimer < scoreMsgRate) {
-        //         context.fillText(scoreMsg, 300, 70);
-        //         scoreMsgTimer++;
-        //     } else {
-        //         scoreMsg = null;
-        //         scoreMsgTimer = 0;
-        //     }
-        // }
+        context.fillText("Lives: ", 60, 70);
+        for (let i = 0; i < lifeNum; i++) {
+            if (i < tankP.lifeNum) {
+                context.drawImage(heartImg, 115 + 25 * i, 55);
+            } else {
+                context.drawImage(heartEmptyImg, 115 + 25 * i, 55);
+            }
+        }
+        context.fillText("Enemy remaining: " + enemies.length, 60, 100);
 
         clock += (Date.now() - offset) / 1000;
         let second = Math.floor(clock % 60).toString();
@@ -853,11 +873,18 @@ function loadGameScene() {
         // console.log(second);
         context.fillText("Time: " + minute + " : " + second, 700, 40);
         offset = Date.now();
+
+        drawMiniMap();
+
         context.restore();
-        // update hp and energy bar
-        if (tankP.hp <= 0) {
+
+        // update hp and life number
+        if (tankP.lifeNum <= 0) {
             isWinning = false;
             loadGameOverScene();
+        } else if (tankP.hp <= 0) {
+            tankP.lifeNum--;
+            tankP = new TankP("p0", tankP.lifeNum, 900, 900, 0, 0, 0, 0, speedMP, speedRP, hpMaxP, hpMaxP, mainWeaponTypeP, 0, mainWeaponsP[mainWeaponTypeP], 0, [], 0, tankPImg, tankOffset);
         }
         if (enemies.length == 0) {
             isWinning = true;
