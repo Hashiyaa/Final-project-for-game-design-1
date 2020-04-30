@@ -2,12 +2,10 @@ canvas {
     border: 2px solid black; 
     border-radius: 20px;
     display: block;
-    /* background-image: url("images/background.png"); */
 }
 
 .header {
-    font-family: Georgia;
-    font-size: 40px;
+    font-family: Impact;
     color: black;
 }
 
@@ -20,23 +18,31 @@ canvas {
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: space-evenly;
+    justify-content: space-around;
 }
 
 .rectButton {
-    width: 150px;
+    width: 160px;
     height: 60px;
     border: 10px solid orange;
     border-radius: 10px;
     background-color: rgb(240, 180, 15);
+    font-family: OCR A Std;
     font-size: 20px;
     color: rgb(200, 240, 0);
 }
 
 #instructionText {
     white-space: pre-line;
+    font-family: Arial;
+    font-style: italic;
     font-size: 20px;
     line-height: 30px;
+    padding: 30px;
+    margin: 60px;
+    background-image: url(images/textbox.png);
+    background-repeat: no-repeat;
+    background-size: 100% 100%;
 }
 
 #main {
@@ -59,25 +65,46 @@ canvas {
     z-index: 1;
 }
 
+.tagList {
+    position: relative;
+    width: 450px;
+    height: 300px;
+    display: flex;
+    flex-direction: column;
+    align-items: "flex-start";
+    padding-left: 50px;
+}
+
 .select {
-    width: 200px;
+    width: 250px;
     height: 40px;
-    margin-left: 55px;
-    font-family: Georgia;
-    font-size: 20px;
+    margin-left: 5px;
+    margin-top: 15px;
+    margin-bottom: 20px;
+    font-family: Verdana, sans-serif;
+    font-size: 14px;
+}
+
+.tag {
+    line-height: 40px;
 }
 
 .tagToggle {
-    width: 20px;
-    height: 20px;
-    padding-left: 20px;
+    width: 15px;
+    height: 15px;
 }
 
 .tagLabel {
-    font-family: Georgia;
-    font-size: 20px;
+    font-family: Verdana, sans-serif;
+    font-size: 14px;
     color: black;
-    padding-left: 20px;
+    padding-left: 5px;
+}
+
+#bonusLabel {
+    font-family: Verdana, sans-serif;
+    align-self: flex-start;
+    margin-left: 580px;
 }
 
 #gameOverText {
@@ -85,7 +112,6 @@ canvas {
     font-size: 70px;
     color: yellow;
     margin-top: 120px;
-    margin-bottom: 0px;
 }
 
 #scoreText {

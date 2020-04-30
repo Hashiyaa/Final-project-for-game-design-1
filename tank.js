@@ -42,7 +42,7 @@ function intersect(point1, point2, vs) {
             number++;
         }
     }
-    console.log("Number: " + number);
+    // console.log("Number: " + number);
     return number > 1;
 }
 
@@ -226,8 +226,9 @@ class Tank {
 }
 
 export class TankP extends Tank {
-    constructor(id, posX, posY, orient, obstacle, forward, clockwise, speedM, speedR, hp, hpMax, mWeapon, sWeapon, weaponType, curWeapon, fireTimer, projectiles, attacked, img, offset) {
+    constructor(id, lifeNum, posX, posY, orient, obstacle, forward, clockwise, speedM, speedR, hp, hpMax, mWeapon, sWeapon, weaponType, curWeapon, fireTimer, projectiles, attacked, img, offset) {
         super(id, posX, posY, orient, obstacle, forward, clockwise, speedM, speedR, hp, hpMax, mWeapon, sWeapon, weaponType, curWeapon, fireTimer, projectiles, attacked, img, offset);
+        this.lifeNum = lifeNum;
     }
 
 }
