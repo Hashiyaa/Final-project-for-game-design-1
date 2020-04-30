@@ -413,8 +413,8 @@ function loadMenuScene() {
     audioButton.id = "audioButton";
     audioButton.style.backgroundImage = "url('images/audio.png')";
 
-    bgm.muted = true; // for debug use
-    bgm.volume = 1;
+    // bgm.muted = true; // for debug use
+    bgm.volume = 0.6;
     bgm.play();
     audioButton.onclick = function () {
         // clickAudio.play();
@@ -809,7 +809,7 @@ function loadGameScene() {
     function draw() {
         if (isOver) return;
 
-        bgm.volume = 0.5;
+        bgm.volume = 0.3;
 
         context.clearRect(0, 0, canvas.width, canvas.height);
         context.save();
