@@ -350,7 +350,7 @@ export class TankE extends Tank {
         } else if (this.attacked) {
             // console.log("Attacked!");
             this.forward = 0;
-            this.clockwise = dir * 2;
+            this.clockwise = dir;
         } else {
             this.clockwise = 0;
             this.forward = 1;

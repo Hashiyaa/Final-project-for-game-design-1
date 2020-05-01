@@ -227,7 +227,7 @@ let enemySpawnsPreset = [{
 window.onkeydown = function (event) {
     event.preventDefault();
     if (isPlaying) {
-        var key = event.keyCode; //Key code of key pressed
+        let key = event.keyCode; // Key code of key pressed
 
         // space
         if (key === 32) {
@@ -248,23 +248,23 @@ window.onkeydown = function (event) {
         // }
 
         // if (tankP.forward == 0) {
-        // right arrow
-        if (key === 39) {
+        // right arrow or d
+        if (key === 39 || key == 68) {
             tankP.clockwise = 1;
         }
-        // left arrow
-        if (key === 37) {
+        // left arrow or a
+        if (key === 37 || key == 65) {
             tankP.clockwise = -1;
         }
         // }
 
         // if (tankP.clockwise == 0) {
-        // top arrow 
-        if (key === 38) {
+        // top arrow or w
+        if (key === 38 || key == 87) {
             tankP.forward = 1;
         }
-        // down arrow
-        if (key === 40) {
+        // down arrow or s
+        if (key === 40 || key == 88) {
             tankP.forward = -1;
         }
         // }
@@ -278,9 +278,15 @@ window.onkeydown = function (event) {
 
 window.onkeyup = function (event) {
     if (curScene == "game") {
+        let key = event.keyCode; // Key code of key pressed
         // stop moving as soon as any key is up
-        tankP.forward = 0;
-        tankP.clockwise = 0;
+        // top down arrow, w and s
+        if (key === 38 || key == 87 || key == 40 || key == 88) {
+            tankP.forward = 0;
+        }
+        if (key === 39 || key == 68 || key === 37 || key == 65) {
+            tankP.clockwise = 0;
+        }
     }
 };
 
