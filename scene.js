@@ -265,7 +265,7 @@ window.onkeydown = function (event) {
             tankP.forward = 1;
         }
         // down arrow or s
-        if (key === 40 || key == 88) {
+        if (key === 40 || key == 83) {
             tankP.forward = -1;
         }
         // }
