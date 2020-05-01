@@ -18,16 +18,6 @@ let clickAudio = new Audio("sound/click.wav");
 let toggleOnAudio = new Audio("sound/toggleOn.wav");
 let toggleOffAudio = new Audio("sound/toggleOff.wav");
 
-let tankPImg = new Image();
-tankPImg.src = 'images/tank_player.png'; // Set source path
-let shellImgP = new Image();
-shellImgP.src = 'images/shell_player.png';
-let apShellImgP = new Image();
-apShellImgP.src = 'images/apShell_player.png';
-let heShellImgP = new Image();
-heShellImgP.src = 'images/heShell_player.png';
-let mgBulletImgP = new Image();
-mgBulletImgP.src = 'images/mgBullet_player.png';
 let mapImg = new Image();
 mapImg.src = 'images/map.png';
 let miniMapImg = new Image();
@@ -37,10 +27,19 @@ heartImg.src = 'images/heart.png';
 let heartEmptyImg = new Image();
 heartEmptyImg.src = 'images/heartEmpty.png';
 
+let tankPImg = new Image();
+tankPImg.src = 'images/tank_player.png'; // Set source path
+let shellImgP = new Image();
+shellImgP.src = 'images/shell_player.png';
+let apShellImgP = new Image();
+apShellImgP.src = 'images/apShell_player.png';
+
 let tankEImg = new Image();
 tankEImg.src = 'images/tank_enemy.png';
 let shellImgE = new Image();
 shellImgE.src = 'images/shell_enemy.png';
+let apShellImgE = new Image();
+apShellImgE.src = 'images/apShell_enemy.png';
 
 //////////////////// game world settings ////////////////////
 let myWorld = {
@@ -94,7 +93,7 @@ let shellP = {
     type: 'm',
     damage: 20,
     fireRate: 100, // the smaller, the faster
-    projSpeed: 10,
+    projSpeed: 15,
     projImg: shellImgP
 };
 mainWeaponsP.push(shellP);
@@ -103,19 +102,19 @@ let apShell = {
     type: 'm',
     damage: 50,
     fireRate: 150,
-    projSpeed: 12,
+    projSpeed: 18,
     projImg: apShellImgP
 };
 mainWeaponsP.push(apShell);
 // High-explosive bombs
-let heShell = {
-    type: 'm',
-    damage: 40,
-    fireRate: 200,
-    projSpeed: 10,
-    projImg: heShellImgP
-};
-mainWeaponsP.push(heShell);
+// let heShell = {
+//     type: 'm',
+//     damage: 40,
+//     fireRate: 200,
+//     projSpeed: 15,
+//     projImg: heShellImgP
+// };
+// mainWeaponsP.push(heShell);
 
 // let secondaryWeaponsP = [];
 // // machine gun
@@ -133,7 +132,7 @@ let shellE = {
     type: 'm',
     damage: 20,
     fireRate: 150,
-    projSpeed: 8,
+    projSpeed: 10,
     projImg: shellImgE
 };
 mainWeaponsE.push(shellE);
@@ -143,8 +142,8 @@ let apShellE = {
     type: 'm',
     damage: 50,
     fireRate: 200,
-    projSpeed: 10,
-    projImg: apShellImgP
+    projSpeed: 12,
+    projImg: apShellImgE
 };
 mainWeaponsE.push(apShellE);
 
@@ -183,7 +182,7 @@ let speedMP;
 let speedRP;
 let mainWeaponTypeP;
 
-let tankOffset = 15;
+let tankOffsetP = 9;
 
 //////////////////// enemy tank settings ////////////////////
 let enemies = [];
@@ -194,6 +193,8 @@ let speedME;
 let speedRE;
 let visionConeE;
 let mainWeaponTypeE;
+
+let tankOffsetE = 5;
 
 // spawning points
 let spawnOffset = 400;
@@ -294,9 +295,9 @@ function drawTank(tank) {
     // draw
     context.save();
     context.translate(tank.posX, tank.posY);
-    context.translate(0, tankOffset);
+    context.translate(0, tank.offset);
     context.rotate(tank.orient / 180 * Math.PI);
-    context.translate(0, -tankOffset);
+    context.translate(0, -tank.offset);
     context.drawImage(tank.img, -tank.img.width * 0.5, -tank.img.height * 0.5);
     // hp bar
     context.translate(-0.5 * hpBarWidth, 0.5 * tank.img.height + 10);
@@ -323,7 +324,7 @@ function drawTank(tank) {
     context.restore();
 
     drawProjectiles(tank);
-    drawRefDot(tank.posX, tank.posY);
+    // drawRefDot(tank.posX, tank.posY);
 }
 
 function drawProjectiles(tank) {
@@ -637,12 +638,12 @@ function loadTagScene() {
         },
         {
             name: "speedMP",
-            cond: "Player's Movement Speed * 2",
+            cond: "Player's Movement Speed * 1.5",
             point: 100
         },
         {
             name: "speedRP",
-            cond: "Player's Rotation Speed * 2",
+            cond: "Player's Rotation Speed * 1.5",
             point: 100
         },
         {
@@ -689,7 +690,7 @@ function loadTagScene() {
                 sum -= playerTags[i].point;
             }
         }
-        bonusScore -= sum * (lifeNum - Number(lifeNumSelect.value));
+        bonusScore -= (sum - 100) * (lifeNum - Number(lifeNumSelect.value));
         bonusLabel.innerHTML = "Bonus points: " + bonusScore;
         lifeNum = Number(lifeNumSelect.value);
     };
@@ -743,9 +744,9 @@ function loadTagScene() {
                 if (i == 0) {
                     hpMaxP *= 2;
                 } else if (i == 1) {
-                    speedMP *= 2;
+                    speedMP *= 1.5;
                 } else if (i == 2) {
-                    speedRP *= 2;
+                    speedRP *= 1.5;
                 } else if (i == 3) {
                     mainWeaponTypeP = 1;
                 }
@@ -840,7 +841,7 @@ function update() {
         loadGameOverScene();
     } else if (tankP.hp <= 0) {
         tankP.lifeNum--;
-        tankP = new TankP("p0", tankP.lifeNum, 900, 900, 0, 0, 0, 0, speedMP, speedRP, hpMaxP, hpMaxP, mainWeaponTypeP, 0, mainWeaponsP[mainWeaponTypeP], 0, [], 0, tankPImg, tankOffset);
+        tankP = new TankP("p0", tankP.lifeNum, 900, 900, 0, 0, 0, 0, speedMP, speedRP, hpMaxP, hpMaxP, mainWeaponTypeP, 0, mainWeaponsP[mainWeaponTypeP], 0, [], 0, tankPImg, tankOffsetP);
     }
     if (enemies.length == 0) {
         isWinning = true;
@@ -925,12 +926,12 @@ function loadGameScene() {
     let enemySpawns = [...enemySpawnsPreset];
 
     // reset the position of player's tank
-    tankP = new TankP("p0", lifeNum, 900, 900, 0, 0, 0, 0, speedMP, speedRP, hpMaxP, hpMaxP, mainWeaponTypeP, 0, mainWeaponsP[mainWeaponTypeP], 0, [], 0, tankPImg, tankOffset);
+    tankP = new TankP("p0", lifeNum, 900, 900, 0, 0, 0, 0, speedMP, speedRP, hpMaxP, hpMaxP, mainWeaponTypeP, 0, mainWeaponsP[mainWeaponTypeP], 0, [], 0, tankPImg, tankOffsetP);
 
     for (let i = 0; i < enemyNum; i++) {
         let randPos = Math.floor(Math.random() * enemySpawns.length);
         let randO = (i % enemyNum) * 90 + 45 + 45 * Math.random();
-        let enemy = new TankE("e" + i, enemySpawns[randPos].x, enemySpawns[randPos].y, randO, 0, 0, 0, speedME, speedRE, -1, hpMaxE, hpMaxE, visionConeE, mainWeaponTypeE, 0, mainWeaponsE[mainWeaponTypeE], 0, [], 0, tankEImg, tankOffset);
+        let enemy = new TankE("e" + i, enemySpawns[randPos].x, enemySpawns[randPos].y, randO, 0, 0, 0, speedME, speedRE, -1, hpMaxE, hpMaxE, visionConeE, mainWeaponTypeE, 0, mainWeaponsE[mainWeaponTypeE], 0, [], 0, tankEImg, tankOffsetE);
         enemies.push(enemy);
         enemySpawns.splice(randPos, 1);
     }

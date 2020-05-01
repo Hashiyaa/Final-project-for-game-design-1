@@ -230,6 +230,7 @@ class Tank {
                         tankE.hp -= this.curWeapon.damage;
                         tankE.attacked = 1;
                     }
+                    break;
                 }
             }
             for (let j = 0; j < obstacles.length; j++) {
@@ -240,6 +241,7 @@ class Tank {
                     this.projectiles.splice(i, 1);
                     i--;
                 }
+                break;
             }
         }
     }
@@ -347,10 +349,13 @@ export class TankE extends Tank {
             this.attacked = 0;
             this.forward = 0;
             this.clockwise = dir;
-        } else if (this.attacked) {
+        } else if (this.attacked && !obstacle) {
             // console.log("Attacked!");
             this.forward = 0;
             this.clockwise = dir;
+        } else if (this.curR >= 0) {
+            // this.clockwise = 0;
+            this.forward = 1;
         } else {
             this.clockwise = 0;
             this.forward = 1;
