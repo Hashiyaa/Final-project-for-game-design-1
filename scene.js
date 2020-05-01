@@ -806,15 +806,15 @@ function update() {
     context.translate(myCamera.x, myCamera.y);
     context.fillText("Score: " + score, 60, 40);
     context.fillText("Highest score: " + hScore, 180, 40);
-    context.fillText("Lives: ", 60, 70);
+    context.fillText("Enemy remaining: " + enemies.length, 60, 70);
+    context.fillText("Lives: ", 280, 70);
     for (let i = 0; i < lifeNum; i++) {
         if (i < tankP.lifeNum) {
-            context.drawImage(heartImg, 115 + 25 * i, 55);
+            context.drawImage(heartImg, 335 + 25 * i, 55);
         } else {
-            context.drawImage(heartEmptyImg, 115 + 25 * i, 55);
+            context.drawImage(heartEmptyImg, 335 + 25 * i, 55);
         }
     }
-    context.fillText("Enemy remaining: " + enemies.length, 60, 100);
 
     clock += (Date.now() - dataOffset) / 1000;
     let second = Math.floor(clock % 60).toString();
@@ -934,7 +934,6 @@ function loadGameScene() {
         if (isPlaying) {
             update();
         }
-        console.log(speedMP);
         dataOffset = Date.now();
         
         window.requestAnimationFrame(draw);

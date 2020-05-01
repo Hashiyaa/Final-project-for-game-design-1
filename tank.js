@@ -334,7 +334,7 @@ export class TankE extends Tank {
         // console.log("Id: " + this.id + ", Obs: " + obstacle);
         // console.log("Orientation: " + tank.orient + ", Angle: " + angle);
         if (Math.abs(angle) < 3 && !obstacle) {
-            console.log("Fire!");
+            // console.log("Fire!");
             this.attacked = 0;
             this.forward = 0;
             this.clockwise = 0;
@@ -343,12 +343,12 @@ export class TankE extends Tank {
                 this.fireTimer = 0;
             }
         } else if (Math.abs(angle) < this.visionCone * 0.5 && !obstacle) {
-            console.log("Detected!");
+            // console.log("Detected!");
             this.attacked = 0;
             this.forward = 0;
             this.clockwise = dir;
         } else if (this.attacked) {
-            console.log("Attacked!");
+            // console.log("Attacked!");
             this.forward = 0;
             this.clockwise = dir * 2;
         } else {
