@@ -445,8 +445,8 @@ function loadMenuScene() {
     let instructionText = document.createElement("p");
     instructionText.id = "instructionText";
     instructionText.innerHTML =
-        "1. Press up and down arrow keys to move forward and backward;\n" +
-        "2. Press left and right arrow keys to turn anti-clockwise and clockwise;\n" +
+        "1. Press up and down arrow keys (Or W and S) to move forward and backward;\n" +
+        "2. Press left and right arrow keys (Or A and D) to turn anti-clockwise and clockwise;\n" +
         // "3. Press 1 and 2 to switch between the main and secondary weapon;\n" +
         "3. Press space to shoot!";
     startMenu.appendChild(instructionText);
