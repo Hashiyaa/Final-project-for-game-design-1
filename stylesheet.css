@@ -51,7 +51,7 @@ canvas {
     margin: 0 auto;
 }
 
-#audioButton {
+.button {
     position: absolute;
     left: 840px;
     top: 20px;
@@ -106,6 +106,14 @@ canvas {
     font-family: Verdana, sans-serif;
     align-self: flex-start;
     margin-left: 580px;
+}
+
+#pauseText {
+    font-family: Impact;
+    font-size: 60px;
+    color: yellow;
+    line-height: 20px;
+    margin-top: 180px;
 }
 
 #gameOverText {

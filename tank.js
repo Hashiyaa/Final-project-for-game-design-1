@@ -254,10 +254,10 @@ export class TankP extends Tank {
 }
 
 export class TankE extends Tank {
-    constructor(id, posX, posY, orient, obstacle, forward, clockwise, speedM, speedR, curR, hp, hpMax, view, mWeapon, sWeapon, curWeapon, fireTimer, projectiles, attacked, img, offset) {
+    constructor(id, posX, posY, orient, obstacle, forward, clockwise, speedM, speedR, curR, hp, hpMax, visionCone, mWeapon, sWeapon, curWeapon, fireTimer, projectiles, attacked, img, offset) {
         super(id, posX, posY, orient, obstacle, forward, clockwise, speedM, speedR, hp, hpMax, mWeapon, sWeapon, curWeapon, fireTimer, projectiles, attacked, img, offset);
         this.curR = curR;
-        this.view = view;
+        this.visionCone = visionCone;
     }
 
     move() {
@@ -342,7 +342,7 @@ export class TankE extends Tank {
                 this.fire();
                 this.fireTimer = 0;
             }
-        } else if (Math.abs(angle) < this.view * 0.5 && !obstacle) {
+        } else if (Math.abs(angle) < this.visionCone * 0.5 && !obstacle) {
             console.log("Detected!");
             this.attacked = 0;
             this.forward = 0;

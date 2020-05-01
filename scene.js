@@ -132,8 +132,8 @@ let mainWeaponsE = [];
 let shellE = {
     type: 'm',
     damage: 20,
-    fireRate: 120,
-    projSpeed: 9,
+    fireRate: 150,
+    projSpeed: 8,
     projImg: shellImgE
 };
 mainWeaponsE.push(shellE);
@@ -142,8 +142,8 @@ mainWeaponsE.push(shellE);
 let apShellE = {
     type: 'm',
     damage: 50,
-    fireRate: 160,
-    projSpeed: 11,
+    fireRate: 200,
+    projSpeed: 10,
     projImg: apShellImgP
 };
 mainWeaponsE.push(apShellE);
@@ -158,6 +158,7 @@ export {
 };
 
 //////////////////// game status and UI settings ////////////////////
+let isPlaying = false;
 let isOver = false;
 let isWinning = false;
 let curScene;
@@ -170,6 +171,8 @@ let hpBarWidth = 60;
 let hpBarHeight = 10;
 let buttonW = 250;
 let buttonH = 100;
+let clock;
+let dataOffset;
 
 //////////////////// player's tank settings ////////////////////
 let tankP;
@@ -189,7 +192,7 @@ let enemyNum;
 let hpMaxE;
 let speedME;
 let speedRE;
-let viewE;
+let visionConeE;
 let mainWeaponTypeE;
 
 // spawning points
@@ -222,8 +225,8 @@ let enemySpawnsPreset = [{
 
 // event listeners for keyboard
 window.onkeydown = function (event) {
-    if (curScene == "game") {
-        event.preventDefault();
+    event.preventDefault();
+    if (isPlaying) {
         var key = event.keyCode; //Key code of key pressed
 
         // space
@@ -244,36 +247,31 @@ window.onkeydown = function (event) {
         //     tankP.weaponType = 's';
         // }
 
-        // // 3
-        // if (key === 51) {
-
+        // if (tankP.forward == 0) {
+        // right arrow
+        if (key === 39) {
+            tankP.clockwise = 1;
+        }
+        // left arrow
+        if (key === 37) {
+            tankP.clockwise = -1;
+        }
         // }
 
-        if (tankP.forward == 0) {
-            // right arrow
-            if (key === 39) {
-                tankP.clockwise = 1;
-            }
-            // left arrow
-            if (key === 37) {
-                tankP.clockwise = -1;
-            }
+        // if (tankP.clockwise == 0) {
+        // top arrow 
+        if (key === 38) {
+            tankP.forward = 1;
         }
-
-        if (tankP.clockwise == 0) {
-            // top arrow 
-            if (key === 38) {
-                tankP.forward = 1;
-            }
-            // down arrow
-            if (key === 40) {
-                tankP.forward = -1;
-            }
+        // down arrow
+        if (key === 40) {
+            tankP.forward = -1;
         }
+        // }
 
         // delete or backspace, for debug use
         if (key === 8) {
-            tankP.hp = 0;
+            tankP.lifeNum = 0;
         }
     }
 };
@@ -451,16 +449,16 @@ function loadMenuScene() {
 
 function setTankParams() {
     lifeNum = 1;
-    hpMaxP = 400;
-    speedMP = 4;
-    speedRP = 2;
+    hpMaxP = 500;
+    speedMP = 5;
+    speedRP = 2.5;
     mainWeaponTypeP = 0;
 
     enemyNum = 1;
     hpMaxE = 60;
     speedME = 2;
     speedRE = 1;
-    viewE = 45;
+    visionConeE = 30;
     mainWeaponTypeE = 0;
 }
 
@@ -542,27 +540,27 @@ function loadTagScene() {
     let enemyTags = [{
             name: "hpE",
             cond: "Enemies' health points * 2",
-            point: 50
+            point: 100
         },
         {
             name: "speedME",
             cond: "Enemies' Movement Speed * 2",
-            point: 50
+            point: 100
         },
         {
             name: "speedRE",
             cond: "Enemies' Rotation Speed * 2",
-            point: 50
+            point: 100
         },
         {
-            name: "viewE",
-            cond: "Enemies' range of view * 2",
-            point: 50
+            name: "visionConeE",
+            cond: "Enemies' cone of vision * 2",
+            point: 100
         },
         {
             name: "shellE",
             cond: "Enemies use armor-piercing shells",
-            point: 50
+            point: 100
         }
     ];
     let checkboxesE = [];
@@ -728,7 +726,7 @@ function loadTagScene() {
                 } else if (i == 2) {
                     speedRE *= 2;
                 } else if (i == 3) {
-                    viewE *= 2;
+                    visionConeE *= 2;
                 } else if (i == 4) {
                     mainWeaponTypeE = 1;
                 }
@@ -761,16 +759,160 @@ function clamp(value, min, max) {
     return value;
 }
 
+function update() {
+    bgm.volume = 0.3;
+
+    context.clearRect(0, 0, canvas.width, canvas.height);
+    context.save();
+
+    myCamera = {
+        x: clamp(tankP.posX - canvas.width / 2, myWorld.minX, myWorld.maxX - canvas.width),
+        y: clamp(tankP.posY - canvas.height / 2, myWorld.minY, myWorld.maxY - canvas.height)
+    };
+    // console.log("CamX: " + camX + ", CamY: " + camY);
+    context.translate(-myCamera.x, -myCamera.y);
+
+    context.drawImage(mapImg, 0, 0);
+
+    ////////// tank section //////////
+    enemies.forEach(tankE => {
+        if (tankE.hp > 0) {
+            drawTank(tankE);
+            tankE.searchForPlayer(tankP);
+            tankE.detectCollision(tankP);
+            tankE.detectHit([tankP]);
+            tankE.move();
+            tankE.fireTimer++;
+        } else {
+            let i = enemies.indexOf(tankE);
+            enemies.splice(i, 1);
+            score += 100;
+        }
+    });
+
+    drawTank(tankP);
+    // tankP.switchWeapon();
+    tankP.detectCollision(enemies);
+    tankP.detectHit(enemies);
+    tankP.move();
+    tankP.fireTimer++;
+
+    ////////// UI section //////////
+    // update highest score
+    // draw texts
+    context.save();
+    context.fillStyle = "white";
+    context.font = "16px Georgia";
+    context.translate(myCamera.x, myCamera.y);
+    context.fillText("Score: " + score, 60, 40);
+    context.fillText("Highest score: " + hScore, 180, 40);
+    context.fillText("Lives: ", 60, 70);
+    for (let i = 0; i < lifeNum; i++) {
+        if (i < tankP.lifeNum) {
+            context.drawImage(heartImg, 115 + 25 * i, 55);
+        } else {
+            context.drawImage(heartEmptyImg, 115 + 25 * i, 55);
+        }
+    }
+    context.fillText("Enemy remaining: " + enemies.length, 60, 100);
+
+    clock += (Date.now() - dataOffset) / 1000;
+    let second = Math.floor(clock % 60).toString();
+    if ((Number(second) < 10)) second = '0' + second;
+    let minute = Math.floor(clock / 60).toString();
+    if ((Number(minute) < 10)) minute = '0' + minute;
+    // console.log(second);
+    context.fillText("Time: " + minute + " : " + second, 360, 40);
+
+    drawMiniMap();
+
+    context.restore();
+
+    // update hp and life number
+    if (tankP.lifeNum <= 0) {
+        isWinning = false;
+        loadGameOverScene();
+    } else if (tankP.hp <= 0) {
+        tankP.lifeNum--;
+        tankP = new TankP("p0", tankP.lifeNum, 900, 900, 0, 0, 0, 0, speedMP, speedRP, hpMaxP, hpMaxP, mainWeaponTypeP, 0, mainWeaponsP[mainWeaponTypeP], 0, [], 0, tankPImg, tankOffset);
+    }
+    if (enemies.length == 0) {
+        isWinning = true;
+        loadGameOverScene();
+    }
+
+    context.restore();
+}
+
 function loadGameScene() {
     curScene = "game";
 
     // remove UI elements
     removeUI();
 
+    let pauseMenu = document.createElement("div");
+    pauseMenu.className = "menu UI";
+    pauseMenu.style.display = "none";
+    pauseMenu.style.justifyContent = "flex-start";
+
+    let pausetext = document.createElement("p");
+    pausetext.id = "pauseText";
+    pausetext.innerHTML = "PAUSING...";
+    
+    pauseMenu.appendChild(pausetext);
+
+    let resumeButton = document.createElement("button");
+    resumeButton.id = "resumeButton";
+    resumeButton.className = "rectButton";
+    resumeButton.innerHTML = "RESUME";
+    resumeButton.style.marginTop = "50px";
+    resumeButton.onclick = function() {
+        clickAudio.play();
+        clickAudio.currentTime = 0;
+        isPlaying = true;
+        pauseMenu.style.display = "none";
+    };
+    pauseMenu.appendChild(resumeButton);
+
+    let quitButton = document.createElement("button");
+    quitButton.id = "quitButton";
+    quitButton.className = "rectButton";
+    quitButton.innerHTML = "QUIT";
+    quitButton.style.marginTop = "50px";
+    quitButton.onclick = function() {
+        clickAudio.play();
+        clickAudio.currentTime = 0;
+        isOver = true;
+        loadMenuScene();
+    };
+    pauseMenu.appendChild(quitButton);
+
+    div.appendChild(pauseMenu);
+
+    let pauseButton = document.createElement("button");
+    pauseButton.id = "pauseButton";
+    pauseButton.className = "button UI";
+    pauseButton.style.left = "790px";
+    pauseButton.style.backgroundImage = "url(images/pause.png)";
+    pauseButton.onclick = function() {
+        clickAudio.play();
+        clickAudio.currentTime = 0;
+        if (isPlaying) {
+            pauseMenu.style.display = "flex";
+        } else {
+            pauseMenu.style.display = "none";
+        }
+        isPlaying = !isPlaying;
+    };
+    div.appendChild(pauseButton);
+
     // reset the game status
+    isPlaying = true;
     isOver = false;
     isWinning = false;
     score = 0;
+    clock = 0;
+    dataOffset = Date.now();
 
     // empty the enemies array
     enemies = [];
@@ -782,100 +924,19 @@ function loadGameScene() {
     for (let i = 0; i < enemyNum; i++) {
         let randPos = Math.floor(Math.random() * enemySpawns.length);
         let randO = (i % enemyNum) * 90 + 45 + 45 * Math.random();
-        let enemy = new TankE("e" + i, enemySpawns[randPos].x, enemySpawns[randPos].y, randO, 0, 0, 0, speedME, speedRE, -1, hpMaxE, hpMaxE, viewE, mainWeaponTypeE, 0, mainWeaponsE[mainWeaponTypeE], 0, [], 0, tankEImg, tankOffset);
+        let enemy = new TankE("e" + i, enemySpawns[randPos].x, enemySpawns[randPos].y, randO, 0, 0, 0, speedME, speedRE, -1, hpMaxE, hpMaxE, visionConeE, mainWeaponTypeE, 0, mainWeaponsE[mainWeaponTypeE], 0, [], 0, tankEImg, tankOffset);
         enemies.push(enemy);
         enemySpawns.splice(randPos, 1);
     }
 
-    let clock = 0;
-    let offset = Date.now();
-
     function draw() {
         if (isOver) return;
-
-        bgm.volume = 0.3;
-
-        context.clearRect(0, 0, canvas.width, canvas.height);
-        context.save();
-
-        myCamera = {
-            x: clamp(tankP.posX - canvas.width / 2, myWorld.minX, myWorld.maxX - canvas.width),
-            y: clamp(tankP.posY - canvas.height / 2, myWorld.minY, myWorld.maxY - canvas.height)
-        };
-        // console.log("CamX: " + camX + ", CamY: " + camY);
-        context.translate(-myCamera.x, -myCamera.y);
-
-        context.drawImage(mapImg, 0, 0);
-
-        ////////// tank section //////////
-        enemies.forEach(tankE => {
-            if (tankE.hp > 0) {
-                drawTank(tankE);
-                tankE.searchForPlayer(tankP);
-                tankE.detectCollision(tankP);
-                tankE.detectHit([tankP]);
-                tankE.move();
-                tankE.fireTimer++;
-            } else {
-                let i = enemies.indexOf(tankE);
-                enemies.splice(i, 1);
-                score += 100;
-            }
-        });
-
-        drawTank(tankP);
-        // tankP.switchWeapon();
-        tankP.detectCollision(enemies);
-        tankP.detectHit(enemies);
-        tankP.move();
-        tankP.fireTimer++;
-
-        ////////// UI section //////////
-        // update highest score
-        // draw texts
-        context.save();
-        context.fillStyle = "white";
-        context.font = "16px Georgia";
-        context.translate(myCamera.x, myCamera.y);
-        context.fillText("Score: " + score, 60, 40);
-        context.fillText("Highest score: " + hScore, 180, 40);
-        context.fillText("Lives: ", 60, 70);
-        for (let i = 0; i < lifeNum; i++) {
-            if (i < tankP.lifeNum) {
-                context.drawImage(heartImg, 115 + 25 * i, 55);
-            } else {
-                context.drawImage(heartEmptyImg, 115 + 25 * i, 55);
-            }
+        if (isPlaying) {
+            update();
         }
-        context.fillText("Enemy remaining: " + enemies.length, 60, 100);
-
-        clock += (Date.now() - offset) / 1000;
-        let second = Math.floor(clock % 60).toString();
-        if ((Number(second) < 10)) second = '0' + second;
-        let minute = Math.floor(clock / 60).toString();
-        if ((Number(minute) < 10)) minute = '0' + minute;
-        // console.log(second);
-        context.fillText("Time: " + minute + " : " + second, 700, 40);
-        offset = Date.now();
-
-        drawMiniMap();
-
-        context.restore();
-
-        // update hp and life number
-        if (tankP.lifeNum <= 0) {
-            isWinning = false;
-            loadGameOverScene();
-        } else if (tankP.hp <= 0) {
-            tankP.lifeNum--;
-            tankP = new TankP("p0", tankP.lifeNum, 900, 900, 0, 0, 0, 0, speedMP, speedRP, hpMaxP, hpMaxP, mainWeaponTypeP, 0, mainWeaponsP[mainWeaponTypeP], 0, [], 0, tankPImg, tankOffset);
-        }
-        if (enemies.length == 0) {
-            isWinning = true;
-            loadGameOverScene();
-        }
-
-        context.restore();
+        console.log(speedMP);
+        dataOffset = Date.now();
+        
         window.requestAnimationFrame(draw);
     }
     draw();
@@ -886,6 +947,7 @@ function loadGameOverScene() {
 
     removeUI();
 
+    isPlaying = false;
     isOver = true;
 
     context.save();
@@ -946,6 +1008,7 @@ function loadGameOverScene() {
 window.onload = function() {
     let audioButton = document.createElement("button");
     audioButton.id = "audioButton";
+    audioButton.className = "button";
 
     audioButton.onclick = function () {
         if (!bgmPlayed) {
@@ -963,4 +1026,4 @@ window.onload = function() {
     };
     div.appendChild(audioButton);
     loadMenuScene();
-}
+};
