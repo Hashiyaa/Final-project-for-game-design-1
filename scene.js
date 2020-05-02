@@ -47,17 +47,19 @@ let myWorld = {
     maxX: 1800,
     minY: 0,
     maxY: 1800,
-    mapRadius: 850
+    mapRadius: 800
 };
-let obsX1 = 800;
-let obsY1 = 570;
+let obsX1 = 810;
+let obsY1 = 590;
 let obsX2 = 840;
-let obsY2 = 660;
-let obs3 = 660;
+let obsY2 = 690;
+let obs3 = 670;
+let obs4 = 740;
 let obstacles = [
     [
         [obsX1, obsY1],
         [obsX2, obsY2],
+        [obs4, obs4],
         [obsY2, obsX2],
         [obsY1, obsX1],
         [obs3, obs3]
@@ -65,6 +67,7 @@ let obstacles = [
     [
         [myWorld.maxX - obsX1, obsY1],
         [myWorld.maxX - obsX2, obsY2],
+        [myWorld.maxX - obs4, obs4],
         [myWorld.maxX - obsY2, obsX2],
         [myWorld.maxX - obsY1, obsX1],
         [myWorld.maxX - obs3, obs3]
@@ -72,6 +75,7 @@ let obstacles = [
     [
         [obsX1, myWorld.maxY - obsY1],
         [obsX2, myWorld.maxY - obsY2],
+        [obs4, myWorld.maxY - obs4],
         [obsY2, myWorld.maxY - obsX2],
         [obsY1, myWorld.maxY - obsX1],
         [obs3, myWorld.maxY - obs3]
@@ -79,6 +83,7 @@ let obstacles = [
     [
         [myWorld.maxX - obsX1, myWorld.maxY - obsY1],
         [myWorld.maxX - obsX2, myWorld.maxY - obsY2],
+        [myWorld.maxX - obs4, myWorld.maxY - obs4],
         [myWorld.maxX - obsY2, myWorld.maxY - obsX2],
         [myWorld.maxX - obsY1, myWorld.maxY - obsX1],
         [myWorld.maxX - obs3, myWorld.maxY - obs3]
@@ -377,7 +382,7 @@ function drawMiniMap() {
         context.fill();
         context.stroke();
     }
-    
+
     context.restore();
 }
 
@@ -434,7 +439,7 @@ function loadMenuScene() {
     startButton.style.left = (0.5 * (canvas.width - buttonW)).toString() + "px";
     startButton.style.top = (0.5 * (canvas.height - buttonH)).toString() + "px";
     startButton.innerHTML = "START";
-    startButton.onclick = function() {
+    startButton.onclick = function () {
         clickAudio.play();
         clickAudio.currentTime = 0;
         loadTagScene();
@@ -471,7 +476,7 @@ function setTankParams() {
 
 function addToggleHandler(checkbox, scoreLabel, bonusLabel, point, mode) {
     checkbox.onchange = function () {
-        
+
         if (checkbox.checked) {
             toggleOnAudio.play();
             toggleOnAudio.currentTime = 0;
@@ -709,7 +714,7 @@ function loadTagScene() {
     backButton.className = "rectButton";
     backButton.innerHTML = "BACK";
     backButton.style.marginLeft = "50px";
-    backButton.onclick = function() {
+    backButton.onclick = function () {
         clickAudio.play();
         clickAudio.currentTime = 0;
         loadMenuScene();
@@ -780,6 +785,12 @@ function update() {
     context.translate(-myCamera.x, -myCamera.y);
 
     context.drawImage(mapImg, 0, 0);
+
+    // for (let j = 0; j < obstacles.length; j++) {
+    //     let obs = obstacles[j];
+    //     drawRefPolygon(obs);
+
+    // }
 
     ////////// tank section //////////
     enemies.forEach(tankE => {
@@ -865,7 +876,7 @@ function loadGameScene() {
     let pausetext = document.createElement("p");
     pausetext.id = "pauseText";
     pausetext.innerHTML = "PAUSING...";
-    
+
     pauseMenu.appendChild(pausetext);
 
     let resumeButton = document.createElement("button");
@@ -873,7 +884,7 @@ function loadGameScene() {
     resumeButton.className = "rectButton";
     resumeButton.innerHTML = "RESUME";
     resumeButton.style.marginTop = "50px";
-    resumeButton.onclick = function() {
+    resumeButton.onclick = function () {
         clickAudio.play();
         clickAudio.currentTime = 0;
         isPlaying = true;
@@ -886,7 +897,7 @@ function loadGameScene() {
     quitButton.className = "rectButton";
     quitButton.innerHTML = "QUIT";
     quitButton.style.marginTop = "50px";
-    quitButton.onclick = function() {
+    quitButton.onclick = function () {
         clickAudio.play();
         clickAudio.currentTime = 0;
         isOver = true;
@@ -901,7 +912,7 @@ function loadGameScene() {
     pauseButton.className = "button UI";
     pauseButton.style.left = "790px";
     pauseButton.style.backgroundImage = "url(images/pause.png)";
-    pauseButton.onclick = function() {
+    pauseButton.onclick = function () {
         clickAudio.play();
         clickAudio.currentTime = 0;
         if (isPlaying) {
@@ -942,7 +953,7 @@ function loadGameScene() {
             update();
         }
         dataOffset = Date.now();
-        
+
         window.requestAnimationFrame(draw);
     }
     draw();
@@ -989,7 +1000,7 @@ function loadGameOverScene() {
     tryAgainButton.innerHTML = "TRY AGAIN";
     tryAgainButton.style.width = "200px";
     tryAgainButton.style.marginBottom = "50px";
-    tryAgainButton.onclick = function() {
+    tryAgainButton.onclick = function () {
         clickAudio.play();
         clickAudio.currentTime = 0;
         loadGameScene();
@@ -1001,7 +1012,7 @@ function loadGameOverScene() {
     quitButton.className = "rectButton";
     quitButton.innerHTML = "QUIT";
     quitButton.style.marginBottom = "50px";
-    quitButton.onclick = function() {
+    quitButton.onclick = function () {
         clickAudio.play();
         clickAudio.currentTime = 0;
         loadMenuScene();
@@ -1011,7 +1022,7 @@ function loadGameOverScene() {
     div.appendChild(gameOverMenu);
 }
 
-window.onload = function() {
+window.onload = function () {
     let audioButton = document.createElement("button");
     audioButton.id = "audioButton";
     audioButton.className = "button";

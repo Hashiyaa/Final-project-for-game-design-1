@@ -240,8 +240,8 @@ class Tank {
                     //console.log("Hit Obs!");
                     this.projectiles.splice(i, 1);
                     i--;
+                    break;
                 }
-                break;
             }
         }
     }
