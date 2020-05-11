@@ -1,0 +1,18 @@
+Haochen, Jin, Vincent,
+
+This game is definitely a great start, and also clearly has room for improvement. It looks great. The tank designs are adorable, and the art style works for what you're doing. The tanks are fast and responsive. The ability to customize the experience with a points system to try and get a high score is a solid mechanical framework.
+
+The mechanics do seems to suffer from a number of issues. Some of them seem intentional, and I'm curious what the goal is for those decisions. For one thing, the inability to rotate the turret. You can only shoot forward, so you have to line up with the enemy tank (which can be tricky) and also means they can line up to shoot you (since tanks can rotate in place) This also makes it hard to dodge without doing spinny circles to bait their attacks. I don't think this is necessarily a bad thing, but it feels weird.
+
+The collisions is also pretty rough because the tank will just STOP at a wall or another tank and sometimes be hard to rotate away. Having a system to help them slide, or maybe push each other could make it feel better.
+
+Two adjustable parameters I wanted to see was tank size, and reload speed. Since accuracy and attack speed felt like two of the most important factors when I played.
+
+Speaking of size, the screen feels pretty small. Other than the minimap, it is hard to see what you are shooting at sometimes, but the enemy tanks have no problem aiming at that distance. Either a larger screen, or maybe have shots appear on the mini map (and tanks flash when hit) could help with those situations. Especially because the enemy tanks seem to aim at my center, which means if I can shoot them, they can shoot me, even if most of my tank is covered by a wall. Maybe have them aim at the center +/- a small random number to add variance?
+
+I think that these mechanical feelings and options are much higher priority than improving the sound and images (except maybe to add other maps.
+
+Speaking of maps, Having destructible terrain that could be shot or crashed through could add some strategy and cause it to change over the course of a match.
+
+Good work! I look forward to seeing where it goes if you continue work.
+Let me know if you need any help.:)
