@@ -121,10 +121,12 @@ class Tank {
         }
         let offsetX = Math.sin(this.orient / 180 * Math.PI) * (this.img.height * 0.5 + this.offset);
         let offsetY = -Math.cos(this.orient / 180 * Math.PI) * (this.img.height * 0.5 + this.offset);
+        let variance = Math.random() * 10 - 5; // a random number between -5 to 5
+        let angle = this.id.charAt(0) == 'p' ? this.orient : this.orient + variance;
         let proj = {
             x: this.posX + offsetX,
             y: this.posY + offsetY + this.offset,
-            a: this.orient,
+            a: angle,
             speed: this.curWeapon.projSpeed,
             img: this.curWeapon.projImg
         };

@@ -428,16 +428,15 @@ function loadMenuScene() {
     let title = document.createElement("p");
     title.className = "header";
     title.innerHTML = "Tank Expert";
-    title.style.fontSize = "70px";
-    title.style.paddingTop = "20px";
+    title.style.fontSize = "100px";
+    title.style.lineHeight = "0px";
+    title.style.marginTop = "180px";
     startMenu.appendChild(title);
 
     // Create Buttons
     let startButton = document.createElement("button");
     startButton.id = "startButton";
     startButton.className = "rectButton";
-    startButton.style.left = (0.5 * (canvas.width - buttonW)).toString() + "px";
-    startButton.style.top = (0.5 * (canvas.height - buttonH)).toString() + "px";
     startButton.innerHTML = "START";
     startButton.onclick = function () {
         clickAudio.play();
@@ -516,15 +515,11 @@ function loadTagScene() {
     header.id = "tagHeader";
     header.className = "header";
     header.innerHTML = "Configure the tanks and win bonus points!";
-    header.style.fontSize = "35px";
+    header.style.fontSize = "50px";
     tagMenu.appendChild(header);
 
     let tagList = document.createElement("div");
     tagList.id = "tagListContainer";
-    tagList.className = "menu";
-    tagList.style.position = "relative";
-    tagList.style.height = "300px";
-    tagList.style.flexDirection = "row";
     tagMenu.appendChild(tagList);
 
     let bonusLabel = document.createElement("div");
@@ -706,6 +701,7 @@ function loadTagScene() {
     buttonPanel.className = "menu";
     buttonPanel.style.position = "relative";
     buttonPanel.style.height = "150px";
+    buttonPanel.style.marginBottom = "30px";
     buttonPanel.style.flexDirection = "row";
     tagMenu.appendChild(buttonPanel);
 
@@ -820,17 +816,17 @@ function update() {
     // draw texts
     context.save();
     context.fillStyle = "white";
-    context.font = "16px Georgia";
+    context.font = "22px Georgia";
     context.translate(myCamera.x, myCamera.y);
-    context.fillText("Score: " + score, 60, 40);
-    context.fillText("Highest score: " + hScore, 180, 40);
-    context.fillText("Enemy remaining: " + enemies.length, 60, 70);
-    context.fillText("Lives: ", 280, 70);
+    context.fillText("Score: " + score, 60, 60);
+    context.fillText("Highest score: " + hScore, 220, 60);
+    context.fillText("Enemy remaining: " + enemies.length, 60, 100);
+    context.fillText("Lives: ", 320, 100);
     for (let i = 0; i < lifeNum; i++) {
         if (i < tankP.lifeNum) {
-            context.drawImage(heartImg, 335 + 25 * i, 55);
+            context.drawImage(heartImg, 385 + 28 * i, 80);
         } else {
-            context.drawImage(heartEmptyImg, 335 + 25 * i, 55);
+            context.drawImage(heartEmptyImg, 385 + 28 * i, 80);
         }
     }
 
@@ -840,7 +836,7 @@ function update() {
     let minute = Math.floor(clock / 60).toString();
     if ((Number(minute) < 10)) minute = '0' + minute;
     // console.log(second);
-    context.fillText("Time: " + minute + " : " + second, 360, 40);
+    context.fillText("Time: " + minute + " : " + second, 440, 60);
 
     drawMiniMap();
 
@@ -883,7 +879,7 @@ function loadGameScene() {
     resumeButton.id = "resumeButton";
     resumeButton.className = "rectButton";
     resumeButton.innerHTML = "RESUME";
-    resumeButton.style.marginTop = "50px";
+    resumeButton.style.marginTop = "70px";
     resumeButton.onclick = function () {
         clickAudio.play();
         clickAudio.currentTime = 0;
@@ -896,7 +892,7 @@ function loadGameScene() {
     quitButton.id = "quitButton";
     quitButton.className = "rectButton";
     quitButton.innerHTML = "QUIT";
-    quitButton.style.marginTop = "50px";
+    quitButton.style.marginTop = "70px";
     quitButton.onclick = function () {
         clickAudio.play();
         clickAudio.currentTime = 0;
@@ -910,7 +906,7 @@ function loadGameScene() {
     let pauseButton = document.createElement("button");
     pauseButton.id = "pauseButton";
     pauseButton.className = "button UI";
-    pauseButton.style.left = "790px";
+    pauseButton.style.right = "120px";
     pauseButton.style.backgroundImage = "url(images/pause.png)";
     pauseButton.onclick = function () {
         clickAudio.play();
@@ -976,7 +972,6 @@ function loadGameOverScene() {
 
     let gameOverMenu = document.createElement("div");
     gameOverMenu.className = "menu UI";
-    gameOverMenu.style.justifyContent = "flex-start";
 
     let gameOverText = document.createElement("p");
     gameOverText.id = "gameOverText";
@@ -998,8 +993,6 @@ function loadGameOverScene() {
     tryAgainButton.id = "tryAgainButton";
     tryAgainButton.className = "rectButton";
     tryAgainButton.innerHTML = "TRY AGAIN";
-    tryAgainButton.style.width = "200px";
-    tryAgainButton.style.marginBottom = "50px";
     tryAgainButton.onclick = function () {
         clickAudio.play();
         clickAudio.currentTime = 0;
@@ -1011,7 +1004,7 @@ function loadGameOverScene() {
     quitButton.id = "quitButton";
     quitButton.className = "rectButton";
     quitButton.innerHTML = "QUIT";
-    quitButton.style.marginBottom = "50px";
+    quitButton.style.marginBottom = "70px";
     quitButton.onclick = function () {
         clickAudio.play();
         clickAudio.currentTime = 0;

@@ -1,5 +1,5 @@
 canvas {
-    border: 2px solid black; 
+    border: 2px solid black;
     border-radius: 20px;
     display: block;
 }
@@ -13,8 +13,8 @@ canvas {
     position: absolute;
     left: 0px;
     top: 0px;
-    width: 900px;
-    height: 600px;
+    width: 1200px;
+    height: 800px;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -22,13 +22,13 @@ canvas {
 }
 
 .rectButton {
-    width: 160px;
-    height: 60px;
+    width: 240px;
+    height: 80px;
     border: 10px solid orange;
     border-radius: 10px;
     background-color: rgb(240, 180, 15);
     font-family: OCR A Std;
-    font-size: 20px;
+    font-size: 30px;
     color: rgb(200, 240, 0);
 }
 
@@ -36,10 +36,10 @@ canvas {
     white-space: pre-line;
     font-family: Arial;
     font-style: italic;
-    font-size: 20px;
-    line-height: 30px;
+    font-size: 24px;
+    line-height: 35px;
     padding: 30px;
-    margin: 60px;
+    margin-bottom: 60px;
     background-image: url(images/textbox.png);
     background-repeat: no-repeat;
     background-size: 100% 100%;
@@ -47,16 +47,16 @@ canvas {
 
 #main {
     position: relative;
-    width: 900px;
+    width: 1200px;
     margin: 0 auto;
 }
 
 .button {
     position: absolute;
-    left: 840px;
-    top: 20px;
-    width: 40px;
-    height: 40px;
+    right: 30px;
+    top: 30px;
+    width: 60px;
+    height: 60px;
     background-image: url('images/mute.png');
     background-color: #FFF0;
     background-position: center;
@@ -66,24 +66,33 @@ canvas {
     z-index: 1;
 }
 
+#tagListContainer {
+    position: relative;
+    width: 1200px;
+    height: 300px;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-start;
+}
+
 .tagList {
     position: relative;
-    width: 450px;
     height: 300px;
+    width: 600px;
+    margin-left: 100px;
     display: flex;
     flex-direction: column;
     align-items: "flex-start";
-    padding-left: 50px;
 }
 
 .select {
     width: 250px;
     height: 40px;
     margin-left: 5px;
-    margin-top: 15px;
     margin-bottom: 20px;
     font-family: Verdana, sans-serif;
-    font-size: 14px;
+    font-size: 20px;
 }
 
 .tag {
@@ -91,36 +100,36 @@ canvas {
 }
 
 .tagToggle {
-    width: 15px;
-    height: 15px;
+    width: 18px;
+    height: 18px;
 }
 
 .tagLabel {
     font-family: Verdana, sans-serif;
-    font-size: 14px;
+    font-size: 18px;
     color: black;
     padding-left: 5px;
 }
 
 #bonusLabel {
     font-family: Verdana, sans-serif;
-    align-self: flex-start;
-    margin-left: 580px;
+    font-size: 24px;
+    line-height: 0px;
 }
 
 #pauseText {
     font-family: Impact;
-    font-size: 60px;
+    font-size: 70px;
     color: yellow;
     line-height: 20px;
-    margin-top: 180px;
+    margin-top: 240px;
 }
 
 #gameOverText {
     font-family: Impact;
     font-size: 70px;
     color: yellow;
-    line-height: 40px;
+    line-height: 0px;
     margin-top: 120px;
 }
 
@@ -128,6 +137,5 @@ canvas {
     font-family: Impact;
     font-size: 40px;
     color: yellow;
-    line-height: 20px;
-    margin-bottom: 100px;
+    line-height: 0px;
 }
